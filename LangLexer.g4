@@ -1,5 +1,4 @@
-// DELETE THIS CONTENT IF YOU PUT COMBINED GRAMMAR IN Parser TAB
-  lexer grammar ExprLexer;
+  lexer grammar LangLexer;
 
   // number expressions
   // bool signs

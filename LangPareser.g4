@@ -1,5 +1,5 @@
-parser grammar ExprParser;
-options { tokenVocab=ExprLexer; }
+parser grammar LangParser;
+options { tokenVocab=LangLexer; }
 
 program: def* stat* EOF;
 
