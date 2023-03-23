@@ -17,12 +17,12 @@ class LangParserListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by LangParser#def.
-    def enterDef(self, ctx:LangParser.DefContext):
+    # Enter a parse tree produced by LangParser#func.
+    def enterFunc(self, ctx:LangParser.FuncContext):
         pass
 
-    # Exit a parse tree produced by LangParser#def.
-    def exitDef(self, ctx:LangParser.DefContext):
+    # Exit a parse tree produced by LangParser#func.
+    def exitFunc(self, ctx:LangParser.FuncContext):
         pass
 
 
