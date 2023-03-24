@@ -1,0 +1,55 @@
+table function add(table t, row r){
+    if length(r) != width(t)
+    {
+        print("Incorrect shapes");
+        return t;
+    }
+    else{
+        return t + r;
+    }
+}
+
+table function add(table t, column c){
+    if length(c) != length(t){
+        print("Incorrect shapes");
+        return t;
+    }
+    else
+    {
+        return t + c;
+    }
+}
+
+table t = create_table(2, 2);
+column c = create_column(2);
+row r = create_row(3);
+numb I = 0;
+numb j = 0;
+
+while(i < 2){
+    while(j < 2){
+        string val = read_string();
+        t[i][j] = val;
+        ++j;
+    }
+    ++i;
+}
+
+I = 0;
+
+{
+    r[i] = read_string();
+    ++i;
+} until (I < 3)
+
+c[0] = read_string();
+c[1] = read_string();
+
+table res1, res2;
+
+res1, res2 = add(t, r), add(t, c);
+print(res1);
+print(res2);
+
+
+
