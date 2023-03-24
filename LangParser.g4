@@ -1,10 +1,10 @@
 parser grammar LangParser;
 options { tokenVocab=LangLexer; }
 
-program: def* stat* EOF;
+program: func* stat* EOF;
 
 
-def :
+func :
     (basicTypeName|'void') FUNCTION
     ID '(' (basicTypeName ID)? (',' 
         basicTypeName ID)* ')'
