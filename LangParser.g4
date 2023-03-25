@@ -12,7 +12,7 @@ func :
 
 stat: 
     (assignExpr SEMI
-    | numbExpr SEMI
+    | builtinFuncStmt SEMI
     | printStmt SEMI
     | forStat
     | ifElseStmt
@@ -114,8 +114,6 @@ numbExpr:
 boolExpr:
     numbExpr boolSign numbExpr;
     
-// if-else stat
-
 ifElseStmt:
     IF boolExpr '{' 
         funcStat*

@@ -3,6 +3,7 @@
 from antlr4 import *
 from io import StringIO
 from typing.io import TextIO
+from antlr4.error.ErrorStrategy import ErrorStrategy
 import sys
 
 def serializedATN():
@@ -80,7 +81,7 @@ def serializedATN():
         buf.write("\2\2\2tr\3\2\2\2uv\7\24\2\2vz\7\25\2\2wy\5\b\5\2xw\3\2")
         buf.write("\2\2y|\3\2\2\2zx\3\2\2\2z{\3\2\2\2{}\3\2\2\2|z\3\2\2\2")
         buf.write("}~\7\26\2\2~\5\3\2\2\2\177\u0080\5\f\7\2\u0080\u0081\7")
-        buf.write("\22\2\2\u0081\u0093\3\2\2\2\u0082\u0083\5\"\22\2\u0083")
+        buf.write("\22\2\2\u0081\u0093\3\2\2\2\u0082\u0083\5\62\32\2\u0083")
         buf.write("\u0084\7\22\2\2\u0084\u0093\3\2\2\2\u0085\u0086\5N(\2")
         buf.write("\u0086\u0087\7\22\2\2\u0087\u0093\3\2\2\2\u0088\u0093")
         buf.write("\5\n\6\2\u0089\u0093\5&\24\2\u008a\u0093\5(\25\2\u008b")
@@ -470,7 +471,7 @@ class LangParser ( Parser ):
             self.state = 89
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.NUMBER) | (1 << LangParser.STRING) | (1 << LangParser.ID))) != 0):
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.ID))) != 0):
                 self.state = 86
                 self.stat()
                 self.state = 91
@@ -481,7 +482,7 @@ class LangParser ( Parser ):
             self.match(LangParser.EOF)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -615,7 +616,7 @@ class LangParser ( Parser ):
             self.state = 120
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.NUMBER) | (1 << LangParser.STRING) | (1 << LangParser.ID))) != 0):
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.ID))) != 0):
                 self.state = 117
                 self.funcStat()
                 self.state = 122
@@ -626,7 +627,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RCURLY)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -645,8 +646,8 @@ class LangParser ( Parser ):
         def SEMI(self):
             return self.getToken(LangParser.SEMI, 0)
 
-        def numbExpr(self):
-            return self.getTypedRuleContext(LangParser.NumbExprContext,0)
+        def builtinFuncStmt(self):
+            return self.getTypedRuleContext(LangParser.BuiltinFuncStmtContext,0)
 
 
         def printStmt(self):
@@ -719,7 +720,7 @@ class LangParser ( Parser ):
 
             elif la_ == 2:
                 self.state = 128
-                self.numbExpr(0)
+                self.builtinFuncStmt()
                 self.state = 129
                 self.match(LangParser.SEMI)
                 pass
@@ -776,7 +777,7 @@ class LangParser ( Parser ):
 
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -824,7 +825,7 @@ class LangParser ( Parser ):
             self.state = 151
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [LangParser.PLUS, LangParser.MINUS, LangParser.LCURLY, LangParser.FOR, LangParser.IF, LangParser.WHILE, LangParser.PRINT, LangParser.LENGTH, LangParser.RESHAPE, LangParser.DEL_COL, LangParser.DEL_ROW, LangParser.DEL, LangParser.INSERT, LangParser.MAX, LangParser.MIN, LangParser.MAXLEN, LangParser.MINLEN, LangParser.FIND, LangParser.CREATE_ROW, LangParser.CREATE_TABLE, LangParser.CREATE_COL, LangParser.READ_STRING, LangParser.COPY, LangParser.NUMBER_type, LangParser.STRING_type, LangParser.TABLE, LangParser.COLUMN, LangParser.ROW, LangParser.NUMBER, LangParser.STRING, LangParser.ID]:
+            if token in [LangParser.PLUS, LangParser.MINUS, LangParser.LCURLY, LangParser.FOR, LangParser.IF, LangParser.WHILE, LangParser.PRINT, LangParser.LENGTH, LangParser.RESHAPE, LangParser.DEL_COL, LangParser.DEL_ROW, LangParser.DEL, LangParser.INSERT, LangParser.MAX, LangParser.MIN, LangParser.MAXLEN, LangParser.MINLEN, LangParser.FIND, LangParser.CREATE_ROW, LangParser.CREATE_TABLE, LangParser.CREATE_COL, LangParser.READ_STRING, LangParser.COPY, LangParser.NUMBER_type, LangParser.STRING_type, LangParser.TABLE, LangParser.COLUMN, LangParser.ROW, LangParser.ID]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 149
                 self.stat()
@@ -839,7 +840,7 @@ class LangParser ( Parser ):
 
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -957,7 +958,7 @@ class LangParser ( Parser ):
             self.state = 171
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.NUMBER) | (1 << LangParser.STRING) | (1 << LangParser.ID))) != 0):
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.ID))) != 0):
                 self.state = 168
                 self.funcStat()
                 self.state = 173
@@ -968,7 +969,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RCURLY)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1105,7 +1106,7 @@ class LangParser ( Parser ):
 
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1178,7 +1179,7 @@ class LangParser ( Parser ):
 
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1253,7 +1254,7 @@ class LangParser ( Parser ):
             self.match(LangParser.ID)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1316,7 +1317,7 @@ class LangParser ( Parser ):
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1379,7 +1380,7 @@ class LangParser ( Parser ):
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1454,7 +1455,7 @@ class LangParser ( Parser ):
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1517,7 +1518,7 @@ class LangParser ( Parser ):
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1580,7 +1581,7 @@ class LangParser ( Parser ):
 
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1640,7 +1641,7 @@ class LangParser ( Parser ):
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1706,7 +1707,7 @@ class LangParser ( Parser ):
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1779,7 +1780,7 @@ class LangParser ( Parser ):
 
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -1861,7 +1862,7 @@ class LangParser ( Parser ):
 
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.unrollRecursionContexts(_parentctx)
@@ -1918,7 +1919,7 @@ class LangParser ( Parser ):
             self.numbExpr(0)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -2004,7 +2005,7 @@ class LangParser ( Parser ):
             self.state = 260
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.NUMBER) | (1 << LangParser.STRING) | (1 << LangParser.ID))) != 0):
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.ID))) != 0):
                 self.state = 257
                 self.funcStat()
                 self.state = 262
@@ -2029,7 +2030,7 @@ class LangParser ( Parser ):
                     self.state = 271
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
-                    while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.NUMBER) | (1 << LangParser.STRING) | (1 << LangParser.ID))) != 0):
+                    while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.ID))) != 0):
                         self.state = 268
                         self.funcStat()
                         self.state = 273
@@ -2053,7 +2054,7 @@ class LangParser ( Parser ):
                 self.state = 286
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.NUMBER) | (1 << LangParser.STRING) | (1 << LangParser.ID))) != 0):
+                while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.ID))) != 0):
                     self.state = 283
                     self.funcStat()
                     self.state = 288
@@ -2068,7 +2069,7 @@ class LangParser ( Parser ):
 
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -2146,7 +2147,7 @@ class LangParser ( Parser ):
             self.state = 303
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.NUMBER) | (1 << LangParser.STRING) | (1 << LangParser.ID))) != 0):
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.ID))) != 0):
                 self.state = 300
                 self.funcStat()
                 self.state = 305
@@ -2157,7 +2158,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RCURLY)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -2227,7 +2228,7 @@ class LangParser ( Parser ):
             self.state = 312
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.NUMBER) | (1 << LangParser.STRING) | (1 << LangParser.ID))) != 0):
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << LangParser.PLUS) | (1 << LangParser.MINUS) | (1 << LangParser.LCURLY) | (1 << LangParser.FOR) | (1 << LangParser.RETURN) | (1 << LangParser.IF) | (1 << LangParser.WHILE) | (1 << LangParser.PRINT) | (1 << LangParser.LENGTH) | (1 << LangParser.RESHAPE) | (1 << LangParser.DEL_COL) | (1 << LangParser.DEL_ROW) | (1 << LangParser.DEL) | (1 << LangParser.INSERT) | (1 << LangParser.MAX) | (1 << LangParser.MIN) | (1 << LangParser.MAXLEN) | (1 << LangParser.MINLEN) | (1 << LangParser.FIND) | (1 << LangParser.CREATE_ROW) | (1 << LangParser.CREATE_TABLE) | (1 << LangParser.CREATE_COL) | (1 << LangParser.READ_STRING) | (1 << LangParser.COPY) | (1 << LangParser.NUMBER_type) | (1 << LangParser.STRING_type) | (1 << LangParser.TABLE) | (1 << LangParser.COLUMN) | (1 << LangParser.ROW) | (1 << LangParser.ID))) != 0):
                 self.state = 309
                 self.funcStat()
                 self.state = 314
@@ -2246,7 +2247,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -2335,7 +2336,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -2441,7 +2442,7 @@ class LangParser ( Parser ):
 
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -2564,7 +2565,7 @@ class LangParser ( Parser ):
             self.match(LangParser.P_SQBRACK)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -2642,7 +2643,8 @@ class LangParser ( Parser ):
                 return visitor.visitChildren(self)
 
 
-
+    def resetErrHandler(self, newErrHandler : ErrorStrategy):
+        self._errHandler = newErrHandler
 
     def builtinFuncStmt(self):
 
@@ -2717,7 +2719,7 @@ class LangParser ( Parser ):
 
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -2778,7 +2780,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -2834,7 +2836,7 @@ class LangParser ( Parser ):
             self.match(LangParser.SEMI)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -2918,7 +2920,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3021,7 +3023,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3105,7 +3107,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3165,7 +3167,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3225,7 +3227,7 @@ class LangParser ( Parser ):
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3287,7 +3289,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3344,7 +3346,7 @@ class LangParser ( Parser ):
                 self.consume()
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3416,7 +3418,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3494,7 +3496,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3572,7 +3574,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3643,7 +3645,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3732,7 +3734,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()
@@ -3787,7 +3789,7 @@ class LangParser ( Parser ):
             self.match(LangParser.RPAREN)
         except RecognitionException as re:
             localctx.exception = re
-            self._errHandler.reportError(self, re)
+            self._errHandler.reportError(self, re, localctx)
             self._errHandler.recover(self, re)
         finally:
             self.exitRule()

@@ -46,8 +46,7 @@
   ELSE : 'else' ;
   WHILE : 'while' ;
   UNTIL : 'until' ;
-  COMMENT
-  :  '#' ~( '\r' | '\n' )*;
+  COMMENT :  '#' ~( '\r' | '\n' )*;
 
 
   // built-in functions 
