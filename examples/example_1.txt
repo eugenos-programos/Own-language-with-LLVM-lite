@@ -1,10 +1,10 @@
 numb function mean(row row1)
 {
-    numb sum = 0;
+    numb sum  0;
     for(numb I = 0;I < length(row1); ++I){
         sum += row1[I];
     }
-    return sum / length(row1);
+    return sum ? length(row1);
 }
 
 row row1 = create_row(3, [1, 4.5, 6]);
