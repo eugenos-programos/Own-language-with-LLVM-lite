@@ -1,9 +1,9 @@
 import sys
 import os
 from antlr4 import *
-from LangLexer import LangLexer
-from LangParser import LangParser
-from LangParserVisitor import LangParserVisitor
+from lexer.LangLexer import LangLexer
+from parser.LangParser import LangParser
+from parser.LangParserVisitor import LangParserVisitor
 from MyErrorStrategy import MyErrorStrategy
 from MyErrorListener import MyErrorListener
 
