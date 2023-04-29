@@ -2,7 +2,7 @@ from antlr4.error.Errors import RecognitionException, NoViableAltException, Inpu
     FailedPredicateException
 from antlr4.error.ErrorStrategy import DefaultErrorStrategy
 from antlr4 import *
-from LangParser import LangParser
+from parser.LangParser import LangParser
 
 
 class MyErrorStrategy(DefaultErrorStrategy):
@@ -30,7 +30,6 @@ class MyErrorStrategy(DefaultErrorStrategy):
 
     def checkContext(self, localctx : ParserRuleContext):
         msg = None
-        print(type(localctx))
         if isinstance(localctx, LangParser.ForStatContext):
             msg = "For statement mismatched input - {}. Expected expression like for(<>;<>;<>)..."
         elif isinstance(localctx, LangParser.IfElseStmtContext):
@@ -81,6 +80,8 @@ class MyErrorStrategy(DefaultErrorStrategy):
             msg = "Return value has a different form - {}. Gotten non return statement."
         elif isinstance(localctx, LangParser.BasicTypeNameContext):
             msg = "Basic type name expected. But {} received."
+        elif isinstance(localctx, LangParser.StatContext):
+            msg = "Expression has an incorrect form - {}."
         return msg
 
     def reportNoViableAlternative(self, recognizer: Parser, e: NoViableAltException, msg : str = None):
@@ -113,3 +114,14 @@ class MyErrorStrategy(DefaultErrorStrategy):
             msg = "rule " + ruleName + " " + e.message
         recognizer.notifyErrorListeners(msg, e.offendingToken, e)
 
+    def reportMissingToken(self, recognizer:Parser):
+        if self.inErrorRecoveryMode(recognizer):
+            return
+        self.beginErrorCondition(recognizer)
+        t = recognizer.getCurrentToken()
+        expecting = self.getExpectedTokens(recognizer)
+        msg = "missing " + expecting.toString(recognizer.literalNames, recognizer.symbolicNames) \
+              + " after line " + self.getTokenErrorDisplay(t)
+        recognizer.notifyErrorListeners(msg, t, None)
+
+    

@@ -35,7 +35,7 @@ if __name__ == '__main__':
             parser = LangParser(stream)
             parser.removeErrorListeners()
             parser.addErrorListener(MyErrorListener())
-            parser._errHandler = MyErrorStrategy()
+            parser.resetErrHandler(MyErrorStrategy())
             tree = parser.program()
             visitor = LangParserVisitor()
             output = visitor.visit(tree)
