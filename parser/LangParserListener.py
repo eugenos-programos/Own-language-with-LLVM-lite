@@ -11,35 +11,36 @@ class SemanticAnalyzerException(Exception):
         super().__init__(*args)
 
 
-def get_dict(params, out_type):
-    return {"params": params, "return_type": out_type}
+def get_dict(params : list, out_type : str, func_local_vars : list = None):
+    if func_local_vars is None:
+        return {"params": params, "return_type": out_type}
+    return {"params": params, "return_type": out_type, "local_vars": func_local_vars}
 
 # This class defines a complete listener for a parse tree produced by LangParser.
 class LangParserListener(ParseTreeListener):
 
-    numb_vars = []
-    str_vars = []
-    column_vars = []
-    row_vars = []
-    table_vars = []
+    global_vars = {}
     function_vars = {
+        # built-in functions 
+        # any == all default types include
+        # output is a number == it depends on {number} param 
         "print": get_dict(["any"], "void"),
-        "length": get_dict(["any"], "numb"),
-        "reshape": get_dict(["changing"], ?),
+        "length": get_dict(["table/row/column/string"], "numb"),
+        "reshape": get_dict(["table", "numb", "numb"], "table"),
         "del_col": get_dict(["table", "numb"], "table"),
         "del_row": get_dict(["table", "numb"], "table"),
-        "del": get_dict(["any"], "void"),
-        "insert": get_dict(?, ?), 
-        "max": get_dict([], "numb"),
-        "min": get_dict([], "numb"),
-        "maxlen": get_dict([], "numb"),
-        "find": get_dict([], ),
-        "create_row", get_dict([], "row"),
-        "create_table", get_dict([], "table"),
-        "create_column", get_dict([], "column"),
-        "read_string", get_dict([], "string"),
-        "copy": get_dict(["any"], "any")
-
+        "del": get_dict(["row/column", "numb"], "0"),
+        "insert": get_dict(["column/row", "string/numb", "numb"], "0"), 
+        "max": get_dict(["table/row/column"], "numb"),
+        "min": get_dict(["table/row/column"], "numb"),
+        "maxlen": get_dict(["table/row/column"], "string"),
+        "minlen": get_dict(["table/row/column"], "string"),
+        "find": get_dict(["table/row/column", "string/numb"], "numb"),
+        "create_row": get_dict(["numb", "list"], "row"),
+        "create_table": get_dict(["numb", "list"], "table"),
+        "create_column": get_dict(["numb", "numb", "list"], "table"),
+        "read_string": get_dict([], "string"),
+        "copy": get_dict(["any"], "0")
     }
 
     # Enter a parse tree produced by LangParser#program.
@@ -48,7 +49,8 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#program.
     def exitProgram(self, ctx:LangParser.ProgramContext):
-        pass
+        print(self.function_vars)
+        print(self.global_vars)
 
 
     # Enter a parse tree produced by LangParser#func.
@@ -57,8 +59,22 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#func.
     def exitFunc(self, ctx:LangParser.FuncContext):
-        func_name = ...
-        self.function_vars.append(func_name)
+        func_type = str(ctx.children[0].children[0])
+        func_name = str(ctx.ID(0))
+
+        func_params = list(map(str, ctx.ID()[1:]))
+        func_params_types = list(map(lambda ctx: str(ctx.children[0]), ctx.basicTypeName()[int(func_type != 'void'):]))
+
+
+        print("func params - ", func_params)
+        print("func_params_types - ", func_params_types)
+
+        if len(func_params) != len(func_params_types):
+            raise SemanticAnalyzerException("Check params number and number of their types")
+        
+
+
+        self.function_vars[func_name] = get_dict(func_params_types, func_type, func_params)
 
 
     # Enter a parse tree produced by LangParser#stat.
@@ -92,8 +108,27 @@ class LangParserListener(ParseTreeListener):
     def enterAssignExpr(self, ctx:LangParser.AssignExprContext):
         pass
 
+    def findNumbExprReturnType(self, ctx:LangParser.NumbExprContext) -> LangParser.BasicTypeNameContext:
+        pass
+
     def findBuiltinFunctionType(self, ctx:LangParser.BuiltinFuncStmtContext) -> str:
-        return None, None
+        function_ctxt = ctx.children[0]
+        func_return_type, func_name = None, None
+        func_name = str(function_ctxt.children[0])
+        if isinstance(function_ctxt, LangParser.CustFuncCallContext):
+            find_name = self.function_vars.get(func_name)
+            if find_name is None:
+                raise SemanticAnalyzerException(f"Function {func_name} is not found")
+            func_return_type = find_name.get("return_type")
+        elif (isinstance(function_ctxt, LangParser.DelFuncStmtContext) and str(function_ctxt.children[0]) == 'del')\
+            or isinstance(function_ctxt, LangParser.InsertStmtContext)\
+            or isinstance(function_ctxt, LangParser.CopyStmtContext):
+            first_param = function_ctxt.numbExpr(0)
+            func_return_type = str(self.findNumbExprReturnType(first_param).children[0])
+        else:
+            func_return_type = self.function_vars.get(func_name).get("return_type")
+        
+        return func_return_type, func_name
 
     def findExpressionOutType(self, expr1, sign, expr2) -> str:
         return None
@@ -101,7 +136,7 @@ class LangParserListener(ParseTreeListener):
     # Exit a parse tree produced by LangParser#assignExpr.
     def exitAssignExpr(self, ctx:LangParser.AssignExprContext):
         if ctx.basicTypeName():
-            var_type = ctx.basicTypeName().children[0]
+            var_type = str(ctx.basicTypeName().children[0])
         var_names = []
         for var_name in ctx.ID():
             var_names.append(var_name)
@@ -115,19 +150,20 @@ class LangParserListener(ParseTreeListener):
                 if isinstance(return_type_type, LangParser.BuiltinFuncStmtContext):
                     func_type, func_name = self.findBuiltinFunctionType(return_type_type)
                     if var_type != func_type:
-                        raise SemanticAnalyzerException(f"Builting function {func_name} return type is incompatible with {var_type} type")
+                        raise SemanticAnalyzerException(f"Function '{func_name}' return type is incompatible with '{var_type}' type")
+                    assign_exprs.append(func_name)
                 if isinstance(return_type_type, LangParser.IndexStmtContext):
                     iter_obj_ctxt = return_type_type.children[0]
                     if isinstance(iter_obj_ctxt, LangParser.BuiltinFuncStmtContext):
                         func_type, func_name = self.findBuiltinFunctionType(iter_obj_ctxt)
                         if var_type != func_type:
-                            raise SemanticAnalyzerException(f"Builting function {func_name} return type is incompatible with {var_type} type")
+                            raise SemanticAnalyzerException(f"Function '{func_name}' return type is incompatible with '{var_type}' type")
+                        assign_exprs.append(func_name)
                     if isinstance(iter_obj_ctxt, LangParser.BasicTypeContext):
                         obj_type = str(iter_obj_ctxt.children[0])
                         if var_type != obj_type:
                             raise SemanticAnalyzerException(f"Iterable object output doesn't match to variable type")
             else:
-                print(numb_expr_type.children)
                 sign_ctxt = numb_expr_type.children[1]
                 if isinstance(sign_ctxt, LangParser.BoolSignContext):
                     return_type = 'numb'
@@ -140,7 +176,8 @@ class LangParserListener(ParseTreeListener):
 
         if len(var_names) != len(assign_exprs):
             raise SemanticAnalyzerException("Variables number doesn't match to expressions number")        
-        print(assign_exprs)
+        for var_name in var_names:
+            self.global_vars[str(var_name)] = var_type
 
         
 
@@ -430,7 +467,15 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#findStmt.
     def exitFindStmt(self, ctx:LangParser.FindStmtContext):
-        pass
+        params = ctx.numbExpr()
+        params_types = list(map(self.findNumbExprReturnType, params))
+        available_types = [aval_param.split('/') for aval_param in self.function_vars.get("find").get("params")]
+        params_types = list(map(lambda param_ctxt: str(param_ctxt.children[0]), params_types))
+        if len(available_types) != len(params_types):
+            raise SemanticAnalyzerException("Expected {} parameters, received - {}".format(len(available_types), len(params_types)))
+        for param_index, aval_types_for_each_param in enumerate(available_types):
+            if params_types[param_index] not in aval_types_for_each_param:
+                raise SemanticAnalyzerException(f"Expected {param_index} parameter to be {aval_types_for_each_param}. Received - {params_types[param_index]}")
 
 
     # Enter a parse tree produced by LangParser#printStmt.
@@ -449,5 +494,6 @@ class LangParserListener(ParseTreeListener):
     # Exit a parse tree produced by LangParser#readStrStmt.
     def exitReadStrStmt(self, ctx:LangParser.ReadStrStmtContext):
         pass
+
 
 
