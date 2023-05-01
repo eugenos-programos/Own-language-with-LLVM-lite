@@ -79,7 +79,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#func.
     def exitFunc(self, ctx:LangParser.FuncContext):
-        func_type = str(ctx.children[0].children[0])
+        func_type = str(ctx.children[0].children[0]) if str(ctx.children[0]) != 'void' else 'void'
         func_name = str(ctx.ID(0))
 
         func_params = list(map(str, ctx.ID()[1:]))
@@ -256,6 +256,8 @@ class LangParserListener(ParseTreeListener):
                     assign_exprs_n += 1
                 elif return_type.builtinFuncStmt():
                     func_type, func_name = self.findBuiltinFunctionType(return_type.builtinFuncStmt())
+                    if func_type == 'void':
+                        raise SemanticAnalyzerException(f"Function {func_name} returns nothing")
                     if var_type != func_type:
                         raise SemanticAnalyzerException(f"Function '{func_name}' return type ({func_type}) is incompatible with '{var_type}' type")
                     assign_exprs_n += 1
@@ -297,9 +299,9 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#varDeclStmt.
     def exitVarDeclStmt(self, ctx:LangParser.VarDeclStmtContext):
-        var_type = str(ctx.children[0])
+        var_type = str(ctx.basicTypeName().children[0])
         for var_ctxt in ctx.ID():
-            self.global_vars[str(var_ctxt.children[0])]
+            self.global_vars[str(var_ctxt)] = var_type
 
 
     # Enter a parse tree produced by LangParser#incDecrStat.
@@ -434,7 +436,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#custFuncCall.
     def exitCustFuncCall(self, ctx:LangParser.CustFuncCallContext):
-        pass
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.ID()))
 
 
     # Enter a parse tree produced by LangParser#indexStmt.
@@ -470,7 +472,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#lengthStmt.
     def exitLengthStmt(self, ctx:LangParser.LengthStmtContext):
-        pass
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.LENGTH()))
 
 
     # Enter a parse tree produced by LangParser#returnStmt.
@@ -533,7 +535,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#minMaxFuncStmt.
     def exitMinMaxFuncStmt(self, ctx:LangParser.MinMaxFuncStmtContext):
-        pass
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.minMaxFunc().children[0]))
 
 
     # Enter a parse tree produced by LangParser#delFunc.
@@ -551,7 +553,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#delFuncStmt.
     def exitDelFuncStmt(self, ctx:LangParser.DelFuncStmtContext):
-        pass
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.delFunc().children[0]))
 
 
     # Enter a parse tree produced by LangParser#reshapeStmt.
@@ -560,7 +562,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#reshapeStmt.
     def exitReshapeStmt(self, ctx:LangParser.ReshapeStmtContext):
-        pass
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.RESHAPE()))
 
 
     # Enter a parse tree produced by LangParser#insertStmt.
@@ -569,7 +571,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#insertStmt.
     def exitInsertStmt(self, ctx:LangParser.InsertStmtContext):
-        pass
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.INSERT()))
 
 
     # Enter a parse tree produced by LangParser#findStmt.
@@ -578,15 +580,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#findStmt.
     def exitFindStmt(self, ctx:LangParser.FindStmtContext):
-        params = ctx.numbExpr()
-        params_types = list(map(self.findNumbExprReturnType, params))
-        available_types = [aval_param.split('/') for aval_param in self.function_vars.get("find").get("params")]
-        params_types = list(map(lambda param_ctxt: str(param_ctxt.children[0]), params_types))
-        if len(available_types) != len(params_types):
-            raise SemanticAnalyzerException("Expected {} parameters, received - {}".format(len(available_types), len(params_types)))
-        for param_index, aval_types_for_each_param in enumerate(available_types):
-            if params_types[param_index] not in aval_types_for_each_param:
-                raise SemanticAnalyzerException(f"Expected {param_index} parameter to be {aval_types_for_each_param}. Received - {params_types[param_index]}")
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.FIND()))
 
 
     # Enter a parse tree produced by LangParser#printStmt.
@@ -607,4 +601,12 @@ class LangParserListener(ParseTreeListener):
         pass
 
 
-
+    def checkNumbExprCorrectInFunctionCall(self, ctx, func_name):
+        params = ctx.numbExpr() if isinstance(ctx.numbExpr(), list) else [ctx.numbExpr()]
+        params_types = list(map(self.findExpressionOutType, params))
+        available_types = [aval_param.split('/') for aval_param in self.function_vars.get(func_name).get("params")]
+        if len(available_types) != len(params_types):
+            raise SemanticAnalyzerException("Expected {} parameters, received - {}".format(len(available_types), len(params_types)))
+        for param_index, aval_types_for_each_param in enumerate(available_types):
+            if params_types[param_index] not in aval_types_for_each_param:
+                raise SemanticAnalyzerException(f"Expected {param_index} parameter to be {aval_types_for_each_param} in {func_name} function. Received - {params_types[param_index]}")
