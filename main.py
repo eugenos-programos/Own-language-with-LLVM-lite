@@ -3,6 +3,7 @@ import os
 from antlr4 import *
 from lexer.LangLexer import LangLexer
 from parser.LangParser import LangParser
+from parser.LangParserListener import LangParserListener, SemanticAnalyzerException
 from parser.LangParserVisitor import LangParserVisitor
 from MyErrorStrategy import MyErrorStrategy
 from MyErrorListener import MyErrorListener
@@ -21,6 +22,7 @@ if __name__ == '__main__':
         parser = LangParser(stream)
         parser.removeErrorListeners()
         parser.addErrorListener(MyErrorListener())
+        parser.addParseListener(LangParserListener())
         parser.resetErrHandler(MyErrorStrategy())
         tree = parser.program()
         visitor = LangParserVisitor()
@@ -29,13 +31,17 @@ if __name__ == '__main__':
             print(output)
     else:
         while True:
-            data = InputStream(input(">>> "))
-            lexer = LangLexer(data)
-            stream = CommonTokenStream(lexer)
-            parser = LangParser(stream)
-            parser.removeErrorListeners()
-            parser.addErrorListener(MyErrorListener())
-            parser.resetErrHandler(MyErrorStrategy())
-            tree = parser.program()
-            visitor = LangParserVisitor()
-            output = visitor.visit(tree)
+            try:
+                data = InputStream(input(">>> "))
+                lexer = LangLexer(data)
+                stream = CommonTokenStream(lexer)
+                parser = LangParser(stream)
+                parser.removeErrorListeners()
+                parser.addErrorListener(MyErrorListener())
+                parser.addParseListener(LangParserListener())
+                parser.resetErrHandler(MyErrorStrategy())
+                tree = parser.program()
+                visitor = LangParserVisitor()
+                output = visitor.visit(tree)
+            except SemanticAnalyzerException as exc:
+                print("Error - ", exc)
