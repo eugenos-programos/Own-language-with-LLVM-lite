@@ -65,7 +65,10 @@ class LangParserListener(ParseTreeListener):
 
     # Enter a parse tree produced by LangParser#program.
     def enterProgram(self, ctx:LangParser.ProgramContext):
-        pass
+        self.is_func_init = False
+        self.local_func_vars = {}
+        self.local_func_params = {}
+        self.local_func_name = None
 
     # Exit a parse tree produced by LangParser#program.
     def exitProgram(self, ctx:LangParser.ProgramContext):
@@ -75,16 +78,39 @@ class LangParserListener(ParseTreeListener):
 
     # Enter a parse tree produced by LangParser#func.
     def enterFunc(self, ctx:LangParser.FuncContext):
-        self.local_func_vars = {}
+        pass
+
+    def clear_func_cache(self):
+        if self.is_func_init:
+            self.function_vars.pop(self.local_func_name)
+        for key in self.local_func_vars:
+            self.global_vars.pop(key)
 
     # Exit a parse tree produced by LangParser#func.
     def exitFunc(self, ctx:LangParser.FuncContext):
+        if not self.is_func_init:
+            self.checkAndInitUserFunc(ctx)
+        is_func_return_smth = any(list(map(lambda func_stat: func_stat.returnStmt() is not None, ctx.funcStat())))
+        if not is_func_return_smth and self.local_func_params.get('return_type') != 'void':
+            raise SemanticAnalyzerException(f"Function doesn't return {self.local_func_params.get('return_type')} value")
+        if is_func_return_smth and self.local_func_params.get('return_type') == 'void':
+            raise SemanticAnalyzerException(f"Void function returns value")
+        print("dfd", self.local_func_vars)
+        for func_param in self.local_func_vars:
+            self.global_vars.pop(func_param)
+        self.is_func_init = False
+
+    def checkAndInitUserFunc(self, ctx:LangParser.FuncContext):
         func_type = str(ctx.children[0].children[0]) if str(ctx.children[0]) != 'void' else 'void'
         func_name = str(ctx.ID(0))
+        self.local_func_name = func_name
 
         func_params = list(map(str, ctx.ID()[1:]))
         func_params_types = list(map(lambda ctx: str(ctx.children[0]), ctx.basicTypeName()[int(func_type != 'void'):]))
 
+        if self.function_vars.get(func_name) is not None and self.function_vars.get(func_name).get("params") == func_params_types and\
+            func_type == self.function_vars.get(func_name).get("return_type"): 
+            raise SemanticAnalyzerException(f"Function {func_name} with such params is already defined")
 
         print("func params - ", func_params)
         print("func_params_types - ", func_params_types)
@@ -92,10 +118,14 @@ class LangParserListener(ParseTreeListener):
         if len(func_params) != len(func_params_types):
             raise SemanticAnalyzerException("Check params number and number of their types")
         
+        for func_index, func_param in enumerate(func_params):
+            if self.local_func_vars.get(func_param) is not None:
+                raise SemanticAnalyzerException(f"Function parameter {func_param} is already defined")
+            self.local_func_vars[func_param] = func_params_types[func_index]
+            self.global_vars[func_param] = func_params_types[func_index]
 
-
-        self.function_vars[func_name] = get_dict(func_params_types, func_type, func_params)
-
+        self.function_vars[func_name] = self.local_func_params = get_dict(func_params_types, func_type, func_params)
+        self.is_func_init = True
 
     # Enter a parse tree produced by LangParser#stat.
     def enterStat(self, ctx:LangParser.StatContext):
@@ -108,20 +138,30 @@ class LangParserListener(ParseTreeListener):
 
     # Enter a parse tree produced by LangParser#funcStat.
     def enterFuncStat(self, ctx:LangParser.FuncStatContext):
-        pass
+        if not self.is_func_init:
+            self.checkAndInitUserFunc(ctx.parentCtx)
 
     # Exit a parse tree produced by LangParser#funcStat.
     def exitFuncStat(self, ctx:LangParser.FuncStatContext):
-        pass
-
+        if ctx.returnStmt():
+            return_type = self.findExpressionOutType(ctx.returnStmt().numbExpr())
+            if return_type != self.local_func_params.get('return_type'):
+                raise SemanticAnalyzerException(f"{self.local_func_params.get('return_type')} function returns {return_type} object")
+        elif ctx.stat() and (ctx.stat().assignExpr() is not None or ctx.stat().varDeclStmt() is not None):
+            ass_ctxt = ctx.stat().assignExpr() if ctx.stat().assignExpr() is not None else ctx.stat().varDeclStmt()
+            if ass_ctxt.basicTypeName() is None:
+                return
+            _type = str(ass_ctxt.basicTypeName().children[0])
+            for id in ass_ctxt.ID():
+                self.local_func_vars[str(id)] = _type
 
     # Enter a parse tree produced by LangParser#forStat.
     def enterForStat(self, ctx:LangParser.ForStatContext):
-        pass
+        local_for_vars = {}
 
     # Exit a parse tree produced by LangParser#forStat.
     def exitForStat(self, ctx:LangParser.ForStatContext):
-        pass
+        assigned_vars = ...
 
 
     # Enter a parse tree produced by LangParser#assignExpr.
@@ -243,7 +283,9 @@ class LangParserListener(ParseTreeListener):
             var_type = self.findVarType(str(ctx.ID(0)))
         var_names = []
         for var_name in ctx.ID():
-            var_names.append(var_name)
+            var_names.append(str(var_name))
+        if len(var_names) != len(set(var_names)):
+            raise SemanticAnalyzerException(f"Attempt to define variables with similar name")
         assign_exprs_n = 0
         for expr_index, numb_expr in enumerate(ctx.numbExpr()):
             if numb_expr.returnType() is not None:
@@ -268,10 +310,15 @@ class LangParserListener(ParseTreeListener):
                         if var_type != func_type:
                             raise SemanticAnalyzerException(f"Function '{func_name}' return type ({func_type}) is incompatible with '{var_type}' type")
                         assign_exprs_n += 1
-                    if isinstance(iter_obj_ctxt, LangParser.BasicTypeContext):
+                    if isinstance(iter_obj_ctxt, LangParser.IterBasicTypeContext):
                         obj_type = str(iter_obj_ctxt.children[0])
+                        if iter_obj_ctxt.ID():
+                            obj_type = self.findVarType(str(iter_obj_ctxt.ID()))
+                        else:
+                            raise SemanticAnalyzerException(f"Incorrect subscritable variable")
                         if var_type != obj_type:
                             raise SemanticAnalyzerException(f"Iterable object output doesn't match to variable type")
+                        assign_exprs_n += 1
             elif numb_expr.boolNumbSign() is not None:
                 print(type(numb_expr))
                 sign_ctxt = numb_expr.boolNumbSign()
@@ -288,10 +335,15 @@ class LangParserListener(ParseTreeListener):
         if len(var_names) != assign_exprs_n:
             raise SemanticAnalyzerException("Variables number doesn't match to expressions number")        
         for var_name in var_names:
-            self.global_vars[str(var_name)] = var_type
+            self.addNewVariable(var_name, var_type)
 
         
-
+    def addNewVariable(self, str_name : str, var_type : str):
+        if self.function_vars.get(str_name):
+                raise SemanticAnalyzerException(f"Function with name '{str_name}' is already defined")
+        if self.global_vars.get(str_name):
+                raise SemanticAnalyzerException(f"Variable with name '{str_name}' is already defined")
+        self.global_vars[str_name] = var_type
 
     # Enter a parse tree produced by LangParser#varDeclStmt.
     def enterVarDeclStmt(self, ctx:LangParser.VarDeclStmtContext):
@@ -300,8 +352,11 @@ class LangParserListener(ParseTreeListener):
     # Exit a parse tree produced by LangParser#varDeclStmt.
     def exitVarDeclStmt(self, ctx:LangParser.VarDeclStmtContext):
         var_type = str(ctx.basicTypeName().children[0])
+        var_names = list(map(str, ctx.ID()))
+        if len(var_names) != len(set(var_names)):
+            raise SemanticAnalyzerException(f"Attempt to define variables with similar name")
         for var_ctxt in ctx.ID():
-            self.global_vars[str(var_ctxt)] = var_type
+            self.addNewVariable(str(var_ctxt), var_type)
 
 
     # Enter a parse tree produced by LangParser#incDecrStat.
@@ -310,7 +365,9 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#incDecrStat.
     def exitIncDecrStat(self, ctx:LangParser.IncDecrStatContext):
-        pass
+        var_type = self.findVarType(str(ctx.ID()))
+        if var_type != 'numb':
+            raise SemanticAnalyzerException("Increment and decrement are used for number variables")
 
 
     # Enter a parse tree produced by LangParser#assignSign.
@@ -391,7 +448,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#numbExpr.
     def exitNumbExpr(self, ctx:LangParser.NumbExprContext):
-        pass
+        self.findExpressionOutType(ctx)
 
 
     # Enter a parse tree produced by LangParser#boolExpr.

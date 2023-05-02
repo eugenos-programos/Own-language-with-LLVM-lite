@@ -30,6 +30,7 @@ if __name__ == '__main__':
         if output:
             print(output)
     else:
+        listener = LangParserListener()
         while True:
             try:
                 data = InputStream(input(">>> "))
@@ -38,10 +39,11 @@ if __name__ == '__main__':
                 parser = LangParser(stream)
                 parser.removeErrorListeners()
                 parser.addErrorListener(MyErrorListener())
-                parser.addParseListener(LangParserListener())
+                parser.addParseListener(listener)
                 parser.resetErrHandler(MyErrorStrategy())
                 tree = parser.program()
                 visitor = LangParserVisitor()
                 output = visitor.visit(tree)
             except SemanticAnalyzerException as exc:
+                listener.clear_func_cache()
                 print("Error - ", exc)
