@@ -29,7 +29,7 @@ i = 0;
 {
     r[i] = read_string();
     ++i;
-} until (I < 3)
+} until (i < 3)
 
 c[0] = read_string();
 c[1] = read_string();

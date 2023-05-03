@@ -119,9 +119,6 @@ class LangParserListener(ParseTreeListener):
             func_type == self.function_vars.get(func_name).get("return_type"): 
             raise SemanticAnalyzerException(f"Function {func_name} with such params is already defined")
 
-        print("func params - ", func_params)
-        print("func_params_types - ", func_params_types)
-
         if len(func_params) != len(func_params_types):
             raise SemanticAnalyzerException("Check params number and number of their types")
         
@@ -282,7 +279,6 @@ class LangParserListener(ParseTreeListener):
             func_name = str(function_ctxt.delFunc().children[0])
             func_return_type = self.function_vars.get(func_name).get("return_type")
         else:
-            print(func_name)
             func_return_type = self.function_vars.get(func_name).get("return_type")
         if isinstance(function_ctxt, LangParser.DelFuncStmtContext):
             func_name = str(function_ctxt.delFunc().children[0])
@@ -313,7 +309,6 @@ class LangParserListener(ParseTreeListener):
         first_operand_type = self.findExpressionOutType(first_operand_ctxt)
         second_operand_type = self.findExpressionOutType(second_operand_ctxt)
         sign = str(sign_ctxt.boolSign().children[0]) if sign_ctxt.boolSign() else str(sign_ctxt.numbSign().children[0])
-        print(sign)
         if first_operand_type not in self.available_operands.get(sign) or\
             second_operand_type not in self.available_operands.get(sign):
             raise SemanticAnalyzerException(f"Incorrect operands types ({first_operand_type},{second_operand_type}) for {sign} sign")
@@ -420,7 +415,6 @@ class LangParserListener(ParseTreeListener):
                                 pass
                             assign_exprs_n += 1
                 elif numb_expr.boolNumbSign() is not None:
-                    print(type(numb_expr))
                     sign_ctxt = numb_expr.boolNumbSign()
                     return_type = self.findExprTypeWithTwoOperands(numb_expr.numbExpr(0),
                                                                     sign_ctxt,
