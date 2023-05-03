@@ -87,7 +87,7 @@ class LangParserListener(ParseTreeListener):
 
     # Enter a parse tree produced by LangParser#func.
     def enterFunc(self, ctx:LangParser.FuncContext):
-        pass
+        self.is_func_return_smth = False
 
     def clear_func_cache(self):
         if self.is_func_init:
@@ -99,10 +99,9 @@ class LangParserListener(ParseTreeListener):
     def exitFunc(self, ctx:LangParser.FuncContext):
         if not self.is_func_init:
             self.checkAndInitUserFunc(ctx)
-        is_func_return_smth = any(list(map(lambda func_stat: func_stat.returnStmt() is not None, ctx.funcStat())))
-        if not is_func_return_smth and self.local_func_params.get('return_type') != 'void':
-            raise SemanticAnalyzerException(f"Function doesn't return {self.local_func_params.get('return_type')} value")
-        if is_func_return_smth and self.local_func_params.get('return_type') == 'void':
+        if not self.is_func_return_smth and self.local_func_params.get('return_type') != 'void':
+            raise SemanticAnalyzerException(f"Function doesn't return {self.local_func_params.get('return_type')} value.")
+        if self.is_func_return_smth and self.local_func_params.get('return_type') == 'void':
             raise SemanticAnalyzerException(f"Void function returns value")
         for func_param in self.local_func_vars:
             self.global_vars.pop(func_param)
@@ -148,7 +147,7 @@ class LangParserListener(ParseTreeListener):
     def enterFuncStat(self, ctx:LangParser.FuncStatContext):
         if isinstance(ctx.parentCtx, LangParser.ForStatContext):
             self.initUserForLocSpace(ctx.parentCtx)
-        if not self.is_func_init:
+        if not self.is_func_init and isinstance(ctx.parentCtx, LangParser.FuncContext):
             self.checkAndInitUserFunc(ctx.parentCtx)
 
     def initUserForLocSpace(self, ctx:LangParser.ForStatContext):
@@ -169,9 +168,10 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#funcStat.
     def exitFuncStat(self, ctx:LangParser.FuncStatContext):
-        if ctx.returnStmt() and not isinstance(ctx.parentCtx, LangParser.FuncContext):
+        if ctx.returnStmt() and not self.is_func_init:
             raise SemanticAnalyzerException("Cannot return value outside function space")
         elif ctx.returnStmt():
+            self.is_func_return_smth = True
             return_type = self.findExpressionOutType(ctx.returnStmt().numbExpr())
             if return_type != self.local_func_params.get('return_type'):
                 raise SemanticAnalyzerException(f"{self.local_func_params.get('return_type')} function returns {return_type} object")
@@ -205,18 +205,17 @@ class LangParserListener(ParseTreeListener):
                     while_vars[str(id)] = (_type, False)
             elif isinstance(ctx.parentCtx, LangParser.IfElseStmtContext):
                 ifels_vars = self.local_ifels_vars.get("ifels_local")
-                while local_ifels_vars:
-                    local_ifels_vars = local_ifels_vars.get("ifels_local")
+                while ifels_vars:
+                    ifels_vars = ifels_vars.get("ifels_local")
                 for id in ass_ctxt.ID():
-                    local_ifels_vars[str(id)] = (_type, False)
+                    ifels_vars[str(id)] = (_type, False)
 
 
     # Enter a parse tree produced by LangParser#forStat.
     def enterForStat(self, ctx:LangParser.ForStatContext):
         if isinstance(ctx.parentCtx.parentCtx, LangParser.FuncStatContext):
             self.all_for_vars = {}
-            self.for_stat_started = True
-        if isinstance(ctx.parentCtx.parentCtx, LangParser.ProgramContext):
+        elif isinstance(ctx.parentCtx.parentCtx, LangParser.ProgramContext):
             self.all_for_vars["for_local"] = {}
 
     # Exit a parse tree produced by LangParser#forStat.
@@ -229,6 +228,15 @@ class LangParserListener(ParseTreeListener):
             for_vars_space = self.all_for_vars
         for local_var in for_vars_space:
             self.global_vars.pop(local_var)
+        
+        ### delete 
+        if not self.all_for_vars.get("for_local"):
+            self.all_for_vars = {}
+        else:
+            tmp = self.all_for_vars
+            while tmp.get("for_local").get("for_local"):
+                tmp = tmp.get("for_local")
+            tmp.pop("for_local")
 
 
     # Enter a parse tree produced by LangParser#assignExpr.
@@ -259,14 +267,22 @@ class LangParserListener(ParseTreeListener):
             if find_name is None:
                 raise SemanticAnalyzerException(f"Function {func_name} is not found")
             func_return_type = find_name.get("return_type")
-        elif isinstance(function_ctxt, LangParser.InsertStmtContext)\
-            or isinstance(function_ctxt, LangParser.CopyStmtContext):
+        elif isinstance(function_ctxt, LangParser.InsertStmtContext):
             first_param = function_ctxt.numbExpr(0)
             func_return_type = self.findExpressionOutType(first_param)
+        elif isinstance(function_ctxt, LangParser.CopyStmtContext):
+            func_return_type = self.findVarType(str(function_ctxt.ID()))[0]
         elif (isinstance(function_ctxt, LangParser.DelFuncStmtContext) and function_ctxt.delFunc().DEL() is not None):
             first_param = function_ctxt.numbExpr(0)
             func_return_type = self.findExpressionOutType(first_param)
+        elif isinstance(function_ctxt, LangParser.MinMaxFuncStmtContext):
+            func_name = str(function_ctxt.minMaxFunc().children[0])
+            func_return_type = self.function_vars.get(func_name).get("return_type")
+        elif isinstance(function_ctxt, LangParser.DelFuncStmtContext):
+            func_name = str(function_ctxt.delFunc().children[0])
+            func_return_type = self.function_vars.get(func_name).get("return_type")
         else:
+            print(func_name)
             func_return_type = self.function_vars.get(func_name).get("return_type")
         if isinstance(function_ctxt, LangParser.DelFuncStmtContext):
             func_name = str(function_ctxt.delFunc().children[0])
@@ -276,7 +292,7 @@ class LangParserListener(ParseTreeListener):
 
     def findIndexStmtType(self, ctx:LangParser.IndexStmtContext) -> str:
         if not isinstance(ctx, LangParser.IndexStmtContext):
-            raise TypeError("Incorrect context type")
+            raise TypeError(f"Incorrect context type {type(ctx)}")
         if ctx.iterBasicType():
             iter_var = ctx.iterBasicType()
             if iter_var.ID():
@@ -285,7 +301,10 @@ class LangParserListener(ParseTreeListener):
                     raise SemanticAnalyzerException(f"{var_type} object is not subscriptable")
                 return var_type
         elif ctx.builtinFuncStmt():
-            return self.findBuiltinFunctionType(ctx.builtinFuncStmt())[0]
+            var_type = self.findBuiltinFunctionType(ctx.builtinFuncStmt())[0]
+            if var_type not in ('column', 'row', 'table'):
+                raise SemanticAnalyzerException(f"Function {str(ctx.builtinFuncStmt().ID(0))} returns not iterable object")
+            return var_type
         
     def findExprTypeWithTwoOperands(self, first_operand_ctxt: LangParser.NumbExprContext, 
                                    sign_ctxt: LangParser.BoolNumbSignContext,
@@ -300,17 +319,16 @@ class LangParserListener(ParseTreeListener):
             raise SemanticAnalyzerException(f"Incorrect operands types ({first_operand_type},{second_operand_type}) for {sign} sign")
         if first_operand_type == second_operand_type:
             if sign_ctxt.boolSign():
-                return 'number'
+                return 'numb'
             elif sign_ctxt.numbSign():
                 if sign in ["/", "//"] and first_operand_type != 'numb':
                     raise SemanticAnalyzerException(f"Incorrect operands types ({first_operand_type},{second_operand_type}) for {sign} sign")
                 return first_operand_type
         else:
-            if sign_ctxt.boolSign():
                 if sign in ["==", "!=", "<=", ">=", ">", "<", "!", "&", "|", "-", "*"]:
                     raise SemanticAnalyzerException(f"Operands types for {sign} sign should be equal")
                 elif sign == '+':
-                    types_set = set(first_operand_type, second_operand_type)
+                    types_set = set((first_operand_type, second_operand_type))
                     if not(types_set == {'row', 'table'} or types_set == {'column', 'table'}):
                         raise SemanticAnalyzerException(f"Incorrect operands types ({first_operand_type},{second_operand_type}) for {sign} sign")
                     return 'table'
@@ -335,7 +353,7 @@ class LangParserListener(ParseTreeListener):
                 return func_type
             elif expr_context.returnType().indexStmt():
                 index_stmt_type = self.findIndexStmtType(expr_context.returnType().indexStmt())
-                return ''
+                return index_stmt_type
         elif expr_context.boolNumbSign():
             return self.findExprTypeWithTwoOperands(
                 expr_context.numbExpr(0),
@@ -345,69 +363,80 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#assignExpr.
     def exitAssignExpr(self, ctx:LangParser.AssignExprContext):
-        if ctx.basicTypeName():
-            var_type = str(ctx.basicTypeName().children[0])
-        else:
-            var_type, is_const = self.findVarType(str(ctx.ID(0)))
-            if is_const:
-                raise SemanticAnalyzerException(f"Variable {str(ctx.ID())} is constant")
-        var_names = []
-        for var_name in ctx.ID():
-            var_names.append(str(var_name))
-        if len(var_names) != len(set(var_names)):
-            raise SemanticAnalyzerException(f"Attempt to define variables with similar name")
-        assign_exprs_n = 0
-        for numb_expr in ctx.numbExpr():
-            if numb_expr.returnType() is not None:
-                return_type = numb_expr.returnType()
-                if return_type.basicType():
-                    bas_type_ctx = return_type.basicType()
-                    assign_var_type, _ = self.findVarType(bas_type_ctx)
-                    if var_type != assign_var_type:
-                        raise SemanticAnalyzerException(f"Variable {str(bas_type_ctx.children[0])} type ({assign_var_type}) is incompatible with '{var_type}' type")
-                    assign_exprs_n += 1
-                elif return_type.builtinFuncStmt():
-                    func_type, func_name = self.findBuiltinFunctionType(return_type.builtinFuncStmt())
-                    if func_type == 'void':
-                        raise SemanticAnalyzerException(f"Function {func_name} returns nothing")
-                    if var_type != func_type:
-                        raise SemanticAnalyzerException(f"Function '{func_name}' return type ({func_type}) is incompatible with '{var_type}' type")
-                    assign_exprs_n += 1
-                elif return_type.indexStmt():
-                    iter_obj_ctxt = return_type.indexStmt().children[0]
-                    if isinstance(iter_obj_ctxt, LangParser.BuiltinFuncStmtContext):
-                        func_type, func_name = self.findBuiltinFunctionType(iter_obj_ctxt)
+        if ctx.ID() and ctx.indexStmt():
+            raise SemanticAnalyzerException("Cannot initialize variables and index statements in one assign expression")
+        if ctx.indexStmt():
+            if ctx.basicTypeName():
+                raise SemanticAnalyzerException(f"Cannot initialize index stmt with specified type - {str(ctx.basicTypeName().children[0])}")
+            for idx_stmt in ctx.indexStmt():
+                if idx_stmt.builtinFuncStmt():
+                    raise SemanticAnalyzerException(f"Function {str(idx_stmt.builtinFuncStmt().children[0].children[0])} only returns values")
+                self.findIndexStmtType(idx_stmt)
+
+        elif ctx.ID():
+            if ctx.basicTypeName():
+                var_type = str(ctx.basicTypeName().children[0])
+            else:
+                var_type, is_const = self.findVarType(str(ctx.ID(0)))
+                if is_const:
+                    raise SemanticAnalyzerException(f"Variable {str(ctx.ID())} is constant")
+            var_names = []
+            for var_name in ctx.ID():
+                var_names.append(str(var_name))
+            if len(var_names) != len(set(var_names)):
+                raise SemanticAnalyzerException(f"Attempt to define variables with similar name")
+            assign_exprs_n = 0
+            for numb_expr in ctx.numbExpr():
+                if numb_expr.returnType() is not None:
+                    return_type = numb_expr.returnType()
+                    if return_type.basicType():
+                        bas_type_ctx = return_type.basicType()
+                        assign_var_type, _ = self.findVarType(bas_type_ctx)
+                        if var_type != assign_var_type:
+                            raise SemanticAnalyzerException(f"Variable {str(bas_type_ctx.children[0])} type ({assign_var_type}) is incompatible with '{var_type}' type")
+                        assign_exprs_n += 1
+                    elif return_type.builtinFuncStmt():
+                        func_type, func_name = self.findBuiltinFunctionType(return_type.builtinFuncStmt())
+                        if func_type == 'void':
+                            raise SemanticAnalyzerException(f"Function {func_name} returns nothing")
                         if var_type != func_type:
                             raise SemanticAnalyzerException(f"Function '{func_name}' return type ({func_type}) is incompatible with '{var_type}' type")
                         assign_exprs_n += 1
-                    if isinstance(iter_obj_ctxt, LangParser.IterBasicTypeContext):
-                        obj_type = str(iter_obj_ctxt.children[0])
-                        if iter_obj_ctxt.ID():
-                            obj_type, _ = self.findVarType(str(iter_obj_ctxt.ID()))
-                        else:
-                            raise SemanticAnalyzerException(f"Incorrect subscritable variable")
-                        if var_type != obj_type:
-                            #raise SemanticAnalyzerException(f"Iterable object output doesn't match to variable type")
-                            pass
-                        assign_exprs_n += 1
-            elif numb_expr.boolNumbSign() is not None:
-                print(type(numb_expr))
-                sign_ctxt = numb_expr.boolNumbSign()
-                return_type = self.findExprTypeWithTwoOperands(numb_expr.numbExpr(0),
-                                                                   sign_ctxt,
-                                                                   numb_expr.numbExpr(1) 
-                                                                   )
-                if var_type != return_type:
-                    raise SemanticAnalyzerException("Expression returned type is {} instead of {} type".format(
-                            return_type, var_type
-                        ))
-                assign_exprs_n += 1
+                    elif return_type.indexStmt():
+                        iter_obj_ctxt = return_type.indexStmt().children[0]
+                        if isinstance(iter_obj_ctxt, LangParser.BuiltinFuncStmtContext):
+                            func_type, func_name = self.findBuiltinFunctionType(iter_obj_ctxt)
+                            if var_type != func_type:
+                                raise SemanticAnalyzerException(f"Function '{func_name}' return type ({func_type}) is incompatible with '{var_type}' type")
+                            assign_exprs_n += 1
+                        if isinstance(iter_obj_ctxt, LangParser.IterBasicTypeContext):
+                            obj_type = str(iter_obj_ctxt.children[0])
+                            if iter_obj_ctxt.ID():
+                                obj_type, _ = self.findVarType(str(iter_obj_ctxt.ID()))
+                            else:
+                                raise SemanticAnalyzerException(f"Incorrect subscritable variable")
+                            if var_type != obj_type:
+                                #raise SemanticAnalyzerException(f"Iterable object output doesn't match to variable type")
+                                pass
+                            assign_exprs_n += 1
+                elif numb_expr.boolNumbSign() is not None:
+                    print(type(numb_expr))
+                    sign_ctxt = numb_expr.boolNumbSign()
+                    return_type = self.findExprTypeWithTwoOperands(numb_expr.numbExpr(0),
+                                                                    sign_ctxt,
+                                                                    numb_expr.numbExpr(1) 
+                                                                    )
+                    if var_type != return_type:
+                        raise SemanticAnalyzerException("Expression returned type is {} instead of {} type".format(
+                                return_type, var_type
+                            ))
+                    assign_exprs_n += 1
 
-        if len(var_names) != assign_exprs_n:
-            raise SemanticAnalyzerException("Variables number doesn't match to expressions number")      
-        if ctx.basicTypeName():  
-            for var_name in var_names:
-                self.addNewVariable(var_name, var_type)
+            if len(var_names) != assign_exprs_n:
+                raise SemanticAnalyzerException("Variables number doesn't match to expressions number")      
+            if ctx.basicTypeName():  
+                for var_name in var_names:
+                    self.addNewVariable(var_name, var_type)
 
         
     def addNewVariable(self, str_name : str, var_type : str, constant: bool = False):
@@ -538,20 +567,58 @@ class LangParserListener(ParseTreeListener):
 
     # Enter a parse tree produced by LangParser#ifElseStmt.
     def enterIfElseStmt(self, ctx:LangParser.IfElseStmtContext):
-        pass
+        if isinstance(ctx.parentCtx.parentCtx, LangParser.FuncStatContext):
+            self.local_ifels_vars["ifels_local"] = {}
+        elif isinstance(ctx.parentCtx.parentCtx, LangParser.ProgramContext):
+            self.local_ifels_vars = {}
 
     # Exit a parse tree produced by LangParser#ifElseStmt.
     def exitIfElseStmt(self, ctx:LangParser.IfElseStmtContext):
-        pass
+        ifels_local_space = self.local_ifels_vars.get("ifels_local")
+        if ifels_local_space:
+            while ifels_local_space.get("ifels_local"):
+                ifels_local_space = ifels_local_space.get("ifels_local")
+        else:
+            ifels_local_space = self.local_ifels_vars
+        for local_var in ifels_local_space:
+            if local_var != 'ifels_local':
+                self.global_vars.pop(local_var) 
+
+        if not self.local_ifels_vars.get("ifels_local"):
+            self.local_ifels_vars = {}
+        else:
+            tmp = self.local_ifels_vars
+            while tmp.get("ifels_local").get("ifels_local"):
+                tmp = tmp.get("ifels_local")
+            tmp.pop("ifels_local")
 
 
     # Enter a parse tree produced by LangParser#whileStmt.
     def enterWhileStmt(self, ctx:LangParser.WhileStmtContext):
-        pass
+        if isinstance(ctx.parentCtx.parentCtx, LangParser.FuncStatContext):
+            self.local_while_vars["while_local"] = {}
+        elif isinstance(ctx.parentCtx.parentCtx, LangParser.ProgramContext):
+            self.local_while_vars = {}
 
     # Exit a parse tree produced by LangParser#whileStmt.
     def exitWhileStmt(self, ctx:LangParser.WhileStmtContext):
-        pass
+        while_local_space = self.local_while_vars.get("while_local")
+        if while_local_space:
+            while while_local_space.get("while_local"):
+                while_local_space = while_local_space.get("while_local")
+        else:
+            while_local_space = self.local_while_vars
+        for local_var in while_local_space:
+            if local_var != 'while_local':
+                self.global_vars.pop(local_var) 
+
+        if not self.local_while_vars.get("while_local"):
+            self.local_while_vars = {}
+        else:
+            tmp = self.local_while_vars
+            while tmp.get("while_local").get("while_local"):
+                tmp = tmp.get("while_local")
+            tmp.pop("while_local")
 
 
     # Enter a parse tree produced by LangParser#untilStmt.
@@ -560,7 +627,23 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#untilStmt.
     def exitUntilStmt(self, ctx:LangParser.UntilStmtContext):
-        pass
+        until_local_space = self.local_until_vars.get("until_local")
+        if until_local_space:
+            while until_local_space.get("while_local"):
+                until_local_space = until_local_space.get("until_local")
+        else:
+            until_local_space = self.local_until_vars
+        for local_var in until_local_space:
+            if local_var != 'until_local':
+                self.global_vars.pop(local_var) 
+
+        if not self.local_until_vars.get("until_local"):
+            self.local_until_vars = {}
+        else:
+            tmp = self.local_until_vars
+            while tmp.get("until_local").get("until_local"):
+                tmp = tmp.get("until_local")
+            tmp.pop("until_local")
 
 
     # Enter a parse tree produced by LangParser#custFuncCall.
@@ -649,7 +732,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#copyStmt.
     def exitCopyStmt(self, ctx:LangParser.CopyStmtContext):
-        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.COPY()))
+        self.findVarType(str(ctx.ID()))
 
 
     # Enter a parse tree produced by LangParser#minMaxFunc.
@@ -736,9 +819,11 @@ class LangParserListener(ParseTreeListener):
     def checkNumbExprCorrectInFunctionCall(self, ctx, func_name):
         params = ctx.numbExpr() if isinstance(ctx.numbExpr(), list) else [ctx.numbExpr()]
         params_types = list(map(self.findExpressionOutType, params))
+        if not self.function_vars.get(func_name):
+            raise SemanticAnalyzerException("Function {} is not defined".format(func_name))
         available_types = [aval_param.split('/') for aval_param in self.function_vars.get(func_name).get("params")]
         if len(available_types) != len(params_types):
-            raise SemanticAnalyzerException("Expected {} parameters, received - {}".format(len(available_types), len(params_types)))
+            raise SemanticAnalyzerException("Expected {} parameters, received - {} in function {}".format(len(available_types), len(params_types), func_name))
         for param_index, aval_types_for_each_param in enumerate(available_types):
             if params_types[param_index] not in aval_types_for_each_param:
                 raise SemanticAnalyzerException(f"Expected {param_index} parameter to be {aval_types_for_each_param} in {func_name} function. Received - {params_types[param_index]}")

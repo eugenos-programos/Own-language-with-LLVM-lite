@@ -25,5 +25,5 @@ print(del_col(t, 0));
 print(del_row(t, 0));
 print(del(r, 0));
 print(insert(r, 1, 4));
-print(max(t), min(t), maxlen(t), minlen(t));
+print(max(t));
 print(find(c, "A"));
