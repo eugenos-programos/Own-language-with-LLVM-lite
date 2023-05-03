@@ -86,12 +86,6 @@ boolNumbSign:
     | numbSign
     ;
     
-iterBasicType:
-    ID
-    | COLUMN
-    | ROW
-    | TABLE;
-    
 basicType:
     ID
     | NUMBER
@@ -148,7 +142,7 @@ custFuncCall:
     
 
 indexStmt: 
-    (iterBasicType|
+    (ID|
         builtinFuncStmt)
     (L_SQBRACK 
             (numbExpr)?
