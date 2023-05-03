@@ -37,7 +37,7 @@ class LangParserListener(ParseTreeListener):
         "find": get_dict(["table/row/column", "string/numb"], "numb"),
         "create_row": get_dict(["numb", "list"], "row"),
         "create_table": get_dict(["numb", "list"], "table"),
-        "create_column": get_dict(["numb", "numb", "list"], "table"),
+        "create_column": get_dict(["numb", "numb", "list"], "column"),
         "read_string": get_dict([], "string"),
         "copy": get_dict(["table/row/column/string/numb"], "0")
     }
@@ -75,6 +75,8 @@ class LangParserListener(ParseTreeListener):
         self.local_while_vars = {}
         # until vars
         self.local_until_vars = {}
+        # if else vars
+        self.local_ifels_vars = {}
 
 
     # Exit a parse tree produced by LangParser#program.
@@ -145,23 +147,24 @@ class LangParserListener(ParseTreeListener):
     # Enter a parse tree produced by LangParser#funcStat.
     def enterFuncStat(self, ctx:LangParser.FuncStatContext):
         if isinstance(ctx.parentCtx, LangParser.ForStatContext):
-            self.checkAndInitUserForLocSpace(ctx.parentCtx)
+            self.initUserForLocSpace(ctx.parentCtx)
         if not self.is_func_init:
             self.checkAndInitUserFunc(ctx.parentCtx)
 
-    def checkAndInitUserForLocSpace(self, ctx:LangParser.ForStatContext):
-        if isinstance(ctx, LangParser.ForStatContext):
-            if ctx.assignExpr() and ctx.assignExpr().basicTypeName():
-                ass_ctxt = ctx.assignExpr()
-                type_ = str(ass_ctxt.basicTypeName().children[0])
-                vars_ = list(map(str, ass_ctxt.ID()))
+    def initUserForLocSpace(self, ctx:LangParser.ForStatContext):
+        if ctx.assignExpr() and ctx.assignExpr().basicTypeName():
+            ass_ctxt = ctx.assignExpr()
+            type_ = str(ass_ctxt.basicTypeName().children[0])
+            vars_ = list(map(str, ass_ctxt.ID()))
 
-                for_vars = self.all_for_vars.get("for_local")
-                while for_vars:
+            for_vars = self.all_for_vars.get("for_local")
+            if for_vars:
+                while for_vars.get("for_local"):
                     for_vars = for_vars.get("for_local")
-
-                for var in vars_:
-                    for_vars[var] = [type_, False]
+            else:
+                for_vars = self.all_for_vars
+            for var in vars_:
+                for_vars[var] = [type_, False]
 
 
     # Exit a parse tree produced by LangParser#funcStat.
@@ -172,29 +175,58 @@ class LangParserListener(ParseTreeListener):
             return_type = self.findExpressionOutType(ctx.returnStmt().numbExpr())
             if return_type != self.local_func_params.get('return_type'):
                 raise SemanticAnalyzerException(f"{self.local_func_params.get('return_type')} function returns {return_type} object")
-        elif ctx.stat() and (ctx.stat().assignExpr() is not None or ctx.stat().varDeclStmt() is not None):
-            ass_ctxt = ctx.stat().assignExpr() if ctx.stat().assignExpr() is not None else ctx.stat().varDeclStmt()
+        elif ctx.stat() and ((ctx.stat().assignExpr() and ctx.stat().assignExpr().basicTypeName()) or ctx.stat().varDeclStmt() is not None):
+            ass_ctxt = ctx.stat().assignExpr() if ctx.stat().assignExpr() else ctx.stat().varDeclStmt()
             if ass_ctxt.basicTypeName() is None:
                 return
             _type = str(ass_ctxt.basicTypeName().children[0])
-            for id in ass_ctxt.ID():
-                self.local_func_vars[str(id)] = _type
+            if isinstance(ctx.parentCtx, LangParser.FuncContext):
+                for id in ass_ctxt.ID():
+                    self.local_func_vars[str(id)] = (_type, False)
+            elif isinstance(ctx.parentCtx, LangParser.ForStatContext):
+                for_vars = self.all_for_vars.get("for_local")
+                if for_vars:
+                    while for_vars:
+                        for_vars = for_vars.get("for_local")
+                else:   for_vars = self.all_for_vars
+                for id in ass_ctxt.ID():
+                    for_vars[str(id)] = (_type, False)
+            elif isinstance(ctx.parentCtx, LangParser.UntilStmtContext):
+                until_vars = self.local_until_vars.get("until_local")
+                while until_vars:
+                    until_vars = until_vars.get("until_local")
+                for id in ass_ctxt.ID():
+                    until_vars[str(id)] = (_type, False)
+            elif isinstance(ctx.parentCtx, LangParser.WhileStmtContext):
+                while_vars = self.local_while_vars.get("while_local")
+                while while_vars:
+                    while_vars = while_vars.get("while_local")
+                for id in ass_ctxt.ID():
+                    while_vars[str(id)] = (_type, False)
+            elif isinstance(ctx.parentCtx, LangParser.IfElseStmtContext):
+                ifels_vars = self.local_ifels_vars.get("ifels_local")
+                while local_ifels_vars:
+                    local_ifels_vars = local_ifels_vars.get("ifels_local")
+                for id in ass_ctxt.ID():
+                    local_ifels_vars[str(id)] = (_type, False)
 
 
     # Enter a parse tree produced by LangParser#forStat.
     def enterForStat(self, ctx:LangParser.ForStatContext):
-        if not self.for_stat_started:
+        if isinstance(ctx.parentCtx.parentCtx, LangParser.FuncStatContext):
             self.all_for_vars = {}
             self.for_stat_started = True
-        if self.for_stat_started:
+        if isinstance(ctx.parentCtx.parentCtx, LangParser.ProgramContext):
             self.all_for_vars["for_local"] = {}
 
     # Exit a parse tree produced by LangParser#forStat.
     def exitForStat(self, ctx:LangParser.ForStatContext):
         for_vars_space = self.all_for_vars.get("for_local")
-        if for_vars_space is not None:
+        if for_vars_space:
             while for_vars_space.get("for_local"):
                 for_vars_space = for_vars_space.get("for_local")
+        else:
+            for_vars_space = self.all_for_vars
         for local_var in for_vars_space:
             self.global_vars.pop(local_var)
 
@@ -205,8 +237,6 @@ class LangParserListener(ParseTreeListener):
 
 
     def findVarType(self, ctx:LangParser.BasicTypeContext|LangParser.IterBasicTypeContext|str) -> str:
-        if not isinstance(ctx, (LangParser.BasicTypeContext, str)):
-            raise TypeError("Context is not Basic Type context")
         if isinstance(ctx, str) or ctx.ID():
             str_id = str(ctx.ID()) if not isinstance(ctx, str) else ctx
             if self.global_vars.get(str_id) is None:
@@ -272,7 +302,7 @@ class LangParserListener(ParseTreeListener):
             if sign_ctxt.boolSign():
                 return 'number'
             elif sign_ctxt.numbSign():
-                if sign in ["/", "//"]:
+                if sign in ["/", "//"] and first_operand_type != 'numb':
                     raise SemanticAnalyzerException(f"Incorrect operands types ({first_operand_type},{second_operand_type}) for {sign} sign")
                 return first_operand_type
         else:
@@ -305,7 +335,7 @@ class LangParserListener(ParseTreeListener):
                 return func_type
             elif expr_context.returnType().indexStmt():
                 index_stmt_type = self.findIndexStmtType(expr_context.returnType().indexStmt())
-                return index_stmt_type
+                return ''
         elif expr_context.boolNumbSign():
             return self.findExprTypeWithTwoOperands(
                 expr_context.numbExpr(0),
@@ -357,7 +387,8 @@ class LangParserListener(ParseTreeListener):
                         else:
                             raise SemanticAnalyzerException(f"Incorrect subscritable variable")
                         if var_type != obj_type:
-                            raise SemanticAnalyzerException(f"Iterable object output doesn't match to variable type")
+                            #raise SemanticAnalyzerException(f"Iterable object output doesn't match to variable type")
+                            pass
                         assign_exprs_n += 1
             elif numb_expr.boolNumbSign() is not None:
                 print(type(numb_expr))
@@ -373,9 +404,10 @@ class LangParserListener(ParseTreeListener):
                 assign_exprs_n += 1
 
         if len(var_names) != assign_exprs_n:
-            raise SemanticAnalyzerException("Variables number doesn't match to expressions number")        
-        for var_name in var_names:
-            self.addNewVariable(var_name, var_type)
+            raise SemanticAnalyzerException("Variables number doesn't match to expressions number")      
+        if ctx.basicTypeName():  
+            for var_name in var_names:
+                self.addNewVariable(var_name, var_type)
 
         
     def addNewVariable(self, str_name : str, var_type : str, constant: bool = False):
@@ -591,8 +623,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#createRowStmt.
     def exitCreateRowStmt(self, ctx:LangParser.CreateRowStmtContext):
-        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.CREATE_ROW()))
-
+        pass
 
     # Enter a parse tree produced by LangParser#createTablStmt.
     def enterCreateTablStmt(self, ctx:LangParser.CreateTablStmtContext):
@@ -600,7 +631,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#createTablStmt.
     def exitCreateTablStmt(self, ctx:LangParser.CreateTablStmtContext):
-        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.CREATE_TABLE()))
+        pass
 
 
     # Enter a parse tree produced by LangParser#createColStmt.
@@ -609,7 +640,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#createColStmt.
     def exitCreateColStmt(self, ctx:LangParser.CreateColStmtContext):
-        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.CREATE_COL()))
+        pass
 
 
     # Enter a parse tree produced by LangParser#copyStmt.
