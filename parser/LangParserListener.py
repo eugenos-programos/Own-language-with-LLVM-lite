@@ -63,10 +63,19 @@ class LangParserListener(ParseTreeListener):
 
     # Enter a parse tree produced by LangParser#program.
     def enterProgram(self, ctx:LangParser.ProgramContext):
+        # function vars 
         self.is_func_init = False
         self.local_func_vars = {}
         self.local_func_params = {}
         self.local_func_name = None
+        # for vars 
+        self.all_for_vars = {}
+        self.for_stat_init = False
+        # while vars
+        self.local_while_vars = {}
+        # until vars
+        self.local_until_vars = {}
+
 
     # Exit a parse tree produced by LangParser#program.
     def exitProgram(self, ctx:LangParser.ProgramContext):
@@ -93,7 +102,6 @@ class LangParserListener(ParseTreeListener):
             raise SemanticAnalyzerException(f"Function doesn't return {self.local_func_params.get('return_type')} value")
         if is_func_return_smth and self.local_func_params.get('return_type') == 'void':
             raise SemanticAnalyzerException(f"Void function returns value")
-        print("dfd", self.local_func_vars)
         for func_param in self.local_func_vars:
             self.global_vars.pop(func_param)
         self.is_func_init = False
@@ -136,12 +144,29 @@ class LangParserListener(ParseTreeListener):
 
     # Enter a parse tree produced by LangParser#funcStat.
     def enterFuncStat(self, ctx:LangParser.FuncStatContext):
+        if isinstance(ctx.parentCtx, LangParser.ForStatContext):
+            self.checkAndInitUserForLocSpace(ctx.parentCtx)
         if not self.is_func_init:
             self.checkAndInitUserFunc(ctx.parentCtx)
 
+    def checkAndInitUserForLocSpace(self, ctx:LangParser.ForStatContext):
+        if isinstance(ctx, LangParser.ForStatContext):
+            if ctx.assignExpr() and ctx.assignExpr().basicTypeName():
+                ass_ctxt = ctx.assignExpr()
+                type_ = str(ass_ctxt.basicTypeName().children[0])
+                vars_ = list(map(str, ass_ctxt.ID()))
+
+                for_vars = self.all_for_vars.get("for_local")
+                while for_vars:
+                    for_vars = for_vars.get("for_local")
+
+                for var in vars_:
+                    for_vars[var] = [type_, False]
+
+
     # Exit a parse tree produced by LangParser#funcStat.
     def exitFuncStat(self, ctx:LangParser.FuncStatContext):
-        if ctx.returnStmt() and not self.is_func_init:
+        if ctx.returnStmt() and not isinstance(ctx.parentCtx, LangParser.FuncContext):
             raise SemanticAnalyzerException("Cannot return value outside function space")
         elif ctx.returnStmt():
             return_type = self.findExpressionOutType(ctx.returnStmt().numbExpr())
@@ -155,13 +180,23 @@ class LangParserListener(ParseTreeListener):
             for id in ass_ctxt.ID():
                 self.local_func_vars[str(id)] = _type
 
+
     # Enter a parse tree produced by LangParser#forStat.
     def enterForStat(self, ctx:LangParser.ForStatContext):
-        local_for_vars = {}
+        if not self.for_stat_started:
+            self.all_for_vars = {}
+            self.for_stat_started = True
+        if self.for_stat_started:
+            self.all_for_vars["for_local"] = {}
 
     # Exit a parse tree produced by LangParser#forStat.
     def exitForStat(self, ctx:LangParser.ForStatContext):
-        assigned_vars = ...
+        for_vars_space = self.all_for_vars.get("for_local")
+        if for_vars_space is not None:
+            while for_vars_space.get("for_local"):
+                for_vars_space = for_vars_space.get("for_local")
+        for local_var in for_vars_space:
+            self.global_vars.pop(local_var)
 
 
     # Enter a parse tree produced by LangParser#assignExpr.
@@ -556,7 +591,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#createRowStmt.
     def exitCreateRowStmt(self, ctx:LangParser.CreateRowStmtContext):
-        pass
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.CREATE_ROW()))
 
 
     # Enter a parse tree produced by LangParser#createTablStmt.
@@ -565,7 +600,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#createTablStmt.
     def exitCreateTablStmt(self, ctx:LangParser.CreateTablStmtContext):
-        pass
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.CREATE_TABLE()))
 
 
     # Enter a parse tree produced by LangParser#createColStmt.
@@ -574,7 +609,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#createColStmt.
     def exitCreateColStmt(self, ctx:LangParser.CreateColStmtContext):
-        pass
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.CREATE_COL()))
 
 
     # Enter a parse tree produced by LangParser#copyStmt.
@@ -583,7 +618,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#copyStmt.
     def exitCopyStmt(self, ctx:LangParser.CopyStmtContext):
-        pass
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.COPY()))
 
 
     # Enter a parse tree produced by LangParser#minMaxFunc.
@@ -655,7 +690,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#printStmt.
     def exitPrintStmt(self, ctx:LangParser.PrintStmtContext):
-        pass
+        self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.PRINT()))
 
 
     # Enter a parse tree produced by LangParser#readStrStmt.

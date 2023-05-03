@@ -6,4 +6,5 @@ class MyErrorListener(ErrorListener):
         super().__init__()
 
     def syntaxError(self, recognizer, offendingSymbol, line, column, msg, e):
-        print(f"Error in line {line}:{column} - {msg}")
+        raise SyntaxError(f"Error in line {line}:{column} - {msg}")
+    
