@@ -81,8 +81,9 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#program.
     def exitProgram(self, ctx:LangParser.ProgramContext):
-        print(self.function_vars)
-        print(self.global_vars)
+        #print(self.function_vars)
+        #print(self.global_vars)
+        pass
 
 
     # Enter a parse tree produced by LangParser#func.
