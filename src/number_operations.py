@@ -1,29 +1,23 @@
 from llvmlite import ir
-from llvmlite import binding as llvm
 
+# Create some useful types
+double = ir.DoubleType()
+fnty = ir.FunctionType(double, (double, double))
 
-llvm.initialize()
-llvm.initialize_native_target()
-llvm.initialize_native_asmprinter()
+# Create an empty module...
+module = ir.Module(name=__file__)
+# and declare a function named "fpadd" inside it
+func = ir.Function(module, fnty, name="main")
 
-
-module = ir.Module(name="llvm_module")
-function_type = ir.FunctionType(ir.IntType(32), [], False)
-function = ir.Function(module=module, ftype=function_type, name="number_sum")
-
-
-entry_block = function.append_basic_block(name="func_block")
-builder = ir.IRBuilder(entry_block)
-
-
-constant1 = ir.Constant(ir.IntType(32), 10)
-constant2 = ir.Constant(ir.IntType(32), 10)
-result = builder.add(constant1, constant1)
-
+# Now implement the function
+block = func.append_basic_block(name="entry")
+builder = ir.IRBuilder(block)
+a, b = func.args
+result = builder.fadd(a, b, name="res")
 builder.ret(result)
-
+module.triple = "x86_64-linux-gnu"
+# Print the module IR
 print(module)
 
 with open("IR_code.ll", "w") as file:
     file.write(str(module))
-
