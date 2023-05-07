@@ -4,7 +4,7 @@ My own language for operations with relational data.
 # Run a project
 Create conda enviroment:
 ```bash
-conda env create --name antlr --file=conda_env.yml python=3.10
+conda env create -n antlr --file=conda_env.yml 
 ```
 Activate conda enviroment:
 ```bash
