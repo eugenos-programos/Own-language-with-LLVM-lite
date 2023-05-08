@@ -227,8 +227,7 @@ findStmt:
     COMMA numbExpr RPAREN;
 
 // output thread
-printStmt: PRINT '(' numbExpr?
-        (COMMA numbExpr)* ')';
+printStmt: PRINT '(' numbExpr ')';
     
 // input thread
 readStrStmt: READ_STRING

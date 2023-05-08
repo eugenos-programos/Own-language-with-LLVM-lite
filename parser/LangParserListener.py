@@ -4,6 +4,7 @@ if __name__ is not None and "." in __name__:
     from .LangParser import LangParser
 else:
     from LangParser import LangParser
+from src.llvm_compile import ProgramCompiler
 
 
 class SemanticAnalyzerException(Exception):
@@ -78,12 +79,15 @@ class LangParserListener(ParseTreeListener):
         # if else vars
         self.local_ifels_vars = {}
 
+        # init program compiler
+        self.program_compiler = ProgramCompiler(self)
+
 
     # Exit a parse tree produced by LangParser#program.
     def exitProgram(self, ctx:LangParser.ProgramContext):
         #print(self.function_vars)
         #print(self.global_vars)
-        pass
+        self.program_compiler.compile_program()
 
 
     # Enter a parse tree produced by LangParser#func.
@@ -800,6 +804,7 @@ class LangParserListener(ParseTreeListener):
     # Exit a parse tree produced by LangParser#printStmt.
     def exitPrintStmt(self, ctx:LangParser.PrintStmtContext):
         self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.PRINT()))
+        self.program_compiler.process_print_func(ctx)
 
 
     # Enter a parse tree produced by LangParser#readStrStmt.

@@ -1,9 +1,8 @@
 #include<stdio.h>
 
-extern double add(double, double);
+extern void run_llvmlite_compiler();
 
 int main() {
-    double a = add(1.1, 2.1);
-    printf("%f\n",a);
+    run_llvmlite_compiler();
     return 0;
 }
