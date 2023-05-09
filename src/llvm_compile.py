@@ -15,6 +15,7 @@ class ProgramCompiler:
         self.numb_type = ir.DoubleType()
         self.start_main_func()
 
+
     def process_numb_expr(self, ctx:LangParser.NumbExprContext):
         first_operand = float(str(ctx.numbExpr(0).returnType().basicType().children[0]))
         second_operand = float(str(ctx.numbExpr(1).returnType().basicType().children[0]))
@@ -55,10 +56,10 @@ class ProgramCompiler:
         print("Program translation into IR code is finished. IR file - {}".format(file_name))
         time.sleep(1)
         print("Program is converting from IR into executable file")
-        os.system(f"llvm-as {file_name} -o llvmlite.bc")
+        os.system(f"llvm-as {file_name} -o mylang.bc")
         os.system(f"clang -c -emit-llvm src/main.c -o main.bc")
-        os.system(f"clang llvmlite.bc main.bc -o executable")
-        os.system(f"rm main.bc llvmlite.bc")
+        os.system(f"clang mylang.bc main.bc -o executable")
+        os.system(f"rm main.bc mylang.bc")
 
 
 
