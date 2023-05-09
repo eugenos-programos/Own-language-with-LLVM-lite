@@ -2,6 +2,11 @@ import llvmlite.ir as ir
 import llvmlite.binding as llvm
 from ctypes import CFUNCTYPE
 from parser.LangParser import LangParser
+from src.ColumnVariable import ColumnVariable
+from src.NumbVariable import NumbVariable
+from src.StringVariable import StringVariable
+from src.RowVariable import RowVariable
+from src.TableVariable import TableVariable
 import time
 import os
 
@@ -25,28 +30,23 @@ class ProgramCompiler:
         )
         return nexpr_res
 
-    def process_print_func(self, ctx:LangParser.PrintStmtContext):
+    def process_print_func(self, value):
+        if isinstance(value, NumbVariable):
+            fmt = "%.3f\n\0"
+            value_arg = self.main_builder.load(value.ptr)
+
+        c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
+                                bytearray(fmt.encode("utf8")))
+        ptr = self.main_builder.alloca(c_fmt.type)
+        self.main_builder.store(c_fmt, ptr)
+        print(self.main_builder.load(ptr))
 
         voidptr_ty = ir.IntType(8).as_pointer()
-
-        fmt = "%f\n\0"
-        c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
-                            bytearray(fmt.encode("utf8")))
-        global_fmt = ir.GlobalVariable(self.module, c_fmt.type, name="fstr")
-        global_fmt.linkage = 'internal'
-        global_fmt.global_constant = True
-        global_fmt.initializer = c_fmt
-
-
         printf_ty = ir.FunctionType(ir.IntType(32), [voidptr_ty], var_arg=True)
         printf = ir.Function(self.module, printf_ty, name="printf")
 
-
-        # this val can come from anywhere
-        numb_expr_res = self.process_numb_expr(ctx.numbExpr(0))
-
-        fmt_arg = self.main_builder.bitcast(global_fmt, voidptr_ty)
-        self.main_builder.call(printf, [fmt_arg, numb_expr_res])
+        fmt_arg = self.main_builder.bitcast(ptr, voidptr_ty)
+        self.main_builder.call(printf, [fmt_arg, value_arg])
 
 
     def compile_program(self, file_name='ir_program.ll'):

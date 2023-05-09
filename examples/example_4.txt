@@ -1,1 +1,2 @@
-print(10.4 + 29);
+numb suka = 5.34;
+print(suka);

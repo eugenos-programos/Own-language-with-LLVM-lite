@@ -4,7 +4,7 @@ if __name__ is not None and "." in __name__:
     from .LangParser import LangParser
 else:
     from LangParser import LangParser
-from src.llvm_compile import ProgramCompiler
+from src.llvm_compile import *
 
 
 class SemanticAnalyzerException(Exception):
@@ -251,8 +251,20 @@ class LangParserListener(ParseTreeListener):
             str_id = str(ctx.ID()) if not isinstance(ctx, str) else ctx
             if self.global_vars.get(str_id) is None:
                 raise SemanticAnalyzerException("Variable {} is not defined".format(str_id))
-            var_type, is_const = self.global_vars.get(str_id)
-            return var_type, is_const
+            var_obj = self.global_vars.get(str_id)
+            if isinstance(var_obj, NumbVariable):
+                var_type = 'numb'
+            elif isinstance(var_obj, StringVariable):
+                var_type = 'string'
+            elif isinstance(var_obj, ColumnVariable):
+                var_type = 'column'
+            elif isinstance(var_obj, RowVariable):
+                var_type = 'row'
+            elif isinstance(var_obj, TableVariable):
+                var_type = 'table'
+            else:
+                raise TypeError("Bro here is unknown object ((((")
+            return var_type, False
         elif isinstance(ctx, LangParser.BasicTypeContext) and ctx.NUMBER():
             return 'numb', False
         elif isinstance(ctx, LangParser.BasicTypeContext) and ctx.STRING():
@@ -432,18 +444,50 @@ class LangParserListener(ParseTreeListener):
                     assign_exprs_n += 1
 
             if len(var_names) != assign_exprs_n:
-                raise SemanticAnalyzerException("Variables number doesn't match to expressions number")      
+                raise SemanticAnalyzerException("Variables number doesn't match to expressions number") 
+            assign_results = []   
+            for numbExprCtxt in ctx.numbExpr():
+                assign_results.append(self.findNumbExprResult(numbExprCtxt))
             if ctx.basicTypeName():  
-                for var_name in var_names:
-                    self.addNewVariable(var_name, var_type)
+                for idx, var_name in enumerate(var_names):
+                    self.addNewVariable(var_name, var_type, assign_results[idx])
 
         
-    def addNewVariable(self, str_name : str, var_type : str, constant: bool = False):
+    def addNewVariable(self, str_name : str, var_type : str, value: list|str|int, constant: bool = False):
         if self.function_vars.get(str_name):
                 raise SemanticAnalyzerException(f"Function with name '{str_name}' is already defined")
         if self.global_vars.get(str_name):
                 raise SemanticAnalyzerException(f"Variable with name '{str_name}' is already defined")
-        self.global_vars[str_name] = (var_type, constant)
+        if var_type == 'numb':
+            self.global_vars[str_name] = NumbVariable(str_name, value, self.program_compiler.main_builder)
+
+
+    def findNumbExprResult(self, ctx:LangParser.NumbExprContext):
+        if ctx.returnType():
+            expr:LangParser.ReturnTypeContext = ctx.returnType()
+            if expr.basicType():
+                if expr.basicType().ID():
+                    return self.global_vars.get(str(expr.basicType().ID()))
+                elif expr.basicType().NUMBER():
+                    value = float(str(expr.basicType().NUMBER()))
+                    return value
+                elif expr.basicType().STRING():
+                    value = str(expr.basicType().STRING())
+                    return value
+            elif expr.builtinFuncStmt():
+                pass
+            elif expr.indexStmt():
+                pass
+        elif ctx.boolNumbSign():
+            result = self.findExprResultWithTwoOperands(
+                self, 
+                ctx.numbExpr(0),
+                ctx.boolNumbSign(),
+                ctx.numbExpr(1)
+                )
+
+    def findExprResultWithTwoOperands(self, nexprctx1:LangParser.NumbExprContext, signctxt:LangParser.BoolNumbSignContext, nexprctx2:LangParser.NumbExprContext):
+        pass
 
     # Enter a parse tree produced by LangParser#varDeclStmt.
     def enterVarDeclStmt(self, ctx:LangParser.VarDeclStmtContext):
@@ -804,7 +848,7 @@ class LangParserListener(ParseTreeListener):
     # Exit a parse tree produced by LangParser#printStmt.
     def exitPrintStmt(self, ctx:LangParser.PrintStmtContext):
         self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.PRINT()))
-        self.program_compiler.process_print_func(ctx)
+        self.program_compiler.process_print_func(self.findNumbExprResult(ctx.numbExpr(0)))
 
 
     # Enter a parse tree produced by LangParser#readStrStmt.
