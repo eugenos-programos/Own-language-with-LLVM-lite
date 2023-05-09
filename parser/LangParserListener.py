@@ -848,7 +848,7 @@ class LangParserListener(ParseTreeListener):
     # Exit a parse tree produced by LangParser#printStmt.
     def exitPrintStmt(self, ctx:LangParser.PrintStmtContext):
         self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.PRINT()))
-        self.program_compiler.process_print_func(self.findNumbExprResult(ctx.numbExpr(0)))
+        self.program_compiler.call_print_func(self.findNumbExprResult(ctx.numbExpr(0)))
 
 
     # Enter a parse tree produced by LangParser#readStrStmt.

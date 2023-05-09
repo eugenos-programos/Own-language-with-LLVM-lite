@@ -18,8 +18,16 @@ class ProgramCompiler:
         self.module.triple = "x86_64-pc-linux-gnu"
         self.listener = listener
         self.numb_type = ir.DoubleType()
+        self.load_builtin_funcs()
         self.start_main_func()
 
+    def load_builtin_funcs(self):
+        self.__load_print_func()
+
+    def __load_print_func(self):
+        self.__print_func_arg_types = [ir.IntType(8).as_pointer()]
+        printf_ty = ir.FunctionType(ir.IntType(32), self.__print_func_arg_types, var_arg=True)
+        self.__print_func = ir.Function(self.module, printf_ty, name="printf")
 
     def process_numb_expr(self, ctx:LangParser.NumbExprContext):
         first_operand = float(str(ctx.numbExpr(0).returnType().basicType().children[0]))
@@ -30,7 +38,7 @@ class ProgramCompiler:
         )
         return nexpr_res
 
-    def process_print_func(self, value):
+    def call_print_func(self, value):
         if isinstance(value, NumbVariable):
             fmt = "%.3f\n\0"
             value_arg = self.main_builder.load(value.ptr)
@@ -41,12 +49,8 @@ class ProgramCompiler:
         self.main_builder.store(c_fmt, ptr)
         print(self.main_builder.load(ptr))
 
-        voidptr_ty = ir.IntType(8).as_pointer()
-        printf_ty = ir.FunctionType(ir.IntType(32), [voidptr_ty], var_arg=True)
-        printf = ir.Function(self.module, printf_ty, name="printf")
-
-        fmt_arg = self.main_builder.bitcast(ptr, voidptr_ty)
-        self.main_builder.call(printf, [fmt_arg, value_arg])
+        fmt_arg = self.main_builder.bitcast(ptr, *self.__print_func_arg_types)
+        self.main_builder.call(self.__print_func, [fmt_arg, value_arg])
 
 
     def compile_program(self, file_name='ir_program.ll'):
