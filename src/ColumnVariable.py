@@ -18,7 +18,7 @@ class ColumnVariable:
     def get_element(self, index:int):
         val = self.builder.extract_value(self.ptr, index)
         return val
-    
+        
     def insert_element(self, value:int|str, index):
         return self.builder.insert_value(self.ptr, value, index)
     

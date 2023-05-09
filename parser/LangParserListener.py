@@ -451,7 +451,13 @@ class LangParserListener(ParseTreeListener):
             if ctx.basicTypeName():  
                 for idx, var_name in enumerate(var_names):
                     self.addNewVariable(var_name, var_type, assign_results[idx])
+            else:
+                if ctx.ID(0):
+                    for idx, var_name in enumerate(var_names):
+                        self.changeVarValue(var_name, assign_results[idx])
 
+    def changeVarValue(self, str_name: str, value):
+        self.global_vars.get(str_name).set_value(value)
         
     def addNewVariable(self, str_name : str, var_type : str, value: list|str|int, constant: bool = False):
         if self.function_vars.get(str_name):
@@ -460,6 +466,8 @@ class LangParserListener(ParseTreeListener):
                 raise SemanticAnalyzerException(f"Variable with name '{str_name}' is already defined")
         if var_type == 'numb':
             self.global_vars[str_name] = NumbVariable(str_name, value, self.program_compiler.main_builder)
+        elif var_type == 'string':
+            self.global_vars[str_name] = StringVariable(str_name, value, self.program_compiler.main_builder)
 
 
     def findNumbExprResult(self, ctx:LangParser.NumbExprContext):

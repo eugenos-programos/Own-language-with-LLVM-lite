@@ -18,9 +18,10 @@ class NumbVariable:
         self.builder.store(self.var, self.ptr)
 
     def get_value(self):
-        return self.var.constant
-    
-    def set_value(self):
         value = self.builder.load(self.ptr, name=self.name)
         return value
+    
+    def set_value(self, value:int):
+        self.var = ir.Constant(self.type, value)
+        self.builder.store(self.var, self.ptr)
         

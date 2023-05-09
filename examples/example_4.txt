@@ -1,3 +1,5 @@
-numb suka = 10.534;
-print(suka);
-print(suka);
+string a, b = "a_", "b_";
+print(a);
+print(b);
+a = "dfd";
+print(a);

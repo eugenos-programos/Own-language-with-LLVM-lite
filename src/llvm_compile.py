@@ -20,6 +20,8 @@ class ProgramCompiler:
         self.numb_type = ir.DoubleType()
         self.load_builtin_funcs()
         self.start_main_func()
+        self.local_builders = []
+        self.local_functions = []
 
     def load_builtin_funcs(self):
         self.__load_print_func()
@@ -38,19 +40,33 @@ class ProgramCompiler:
         )
         return nexpr_res
 
-    def call_print_func(self, value):
-        if isinstance(value, NumbVariable):
+    def call_print_func(self, variable):
+        if isinstance(variable, NumbVariable):
             fmt = "%.3f\n\0"
-            value_arg = self.main_builder.load(value.ptr)
+            variable_arg = variable.get_value()
+        elif isinstance(variable, StringVariable):
+            fmt = "%s\n\0"
+            variable_arg = variable.get_value()
+        elif isinstance(variable, str):
+            fmt = "%s\n\0"
+            variable += '\0'
+            const_val = ir.Constant(
+                ir.ArrayType(ir.IntType(8), len(variable)),
+                bytearray(variable.encode('utf8'))
+            )
+            variable_arg = self.main_builder.alloca(const_val.type)
+            self.main_builder.store(const_val, variable_arg)
+        elif isinstance(variable, float):
+            fmt = "%.3f\n\0"
+            variable_arg = ir.Constant(ir.DoubleType(), variable)
 
         c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
                                 bytearray(fmt.encode("utf8")))
         ptr = self.main_builder.alloca(c_fmt.type)
         self.main_builder.store(c_fmt, ptr)
-        print(self.main_builder.load(ptr))
 
         fmt_arg = self.main_builder.bitcast(ptr, *self.__print_func_arg_types)
-        self.main_builder.call(self.__print_func, [fmt_arg, value_arg])
+        self.main_builder.call(self.__print_func, [fmt_arg, variable_arg])
 
 
     def compile_program(self, file_name='ir_program.ll'):
@@ -65,8 +81,6 @@ class ProgramCompiler:
         os.system(f"clang mylang.bc main.bc -o executable")
         os.system(f"rm main.bc mylang.bc")
 
-
-
     def start_main_func(self):
         main_type = ir.FunctionType(ir.IntType(32), [])
         self.main_func = ir.Function(self.module, main_type, name='run_llvmlite_compiler')
@@ -74,4 +88,20 @@ class ProgramCompiler:
 
     def end_main_func(self):
         self.main_builder.ret(ir.Constant(ir.IntType(32), 0))
+
+    def convert_type(self, str_type):
+        if str_type == 'numb':
+            return ir.DoubleType()
         
+    def start_local_func(self, func_name, return_type, arg_types):
+        type_ = self.convert_type(return_type)
+        func_type = ir.FunctionType(type_, (self.convert_type(arg_type) for arg_type in arg_types))
+        self.local_function = ir.Function(self.module, func_type, name=func_name)
+        self.tmp_local_builder = ir.builder.IRBuilder(function.append_basic_block(name='entry'))
+        self.local_builders.append(self.tmp_local_builder)
+        self.local_functions.append(self.local_function)
+
+    def end_local_func(self, return_const:ir.Constant):
+        self.tmp_local_builder.ret(return_const)
+        self.tmp_local_builder = None
+        self.local_function = None
