@@ -1,5 +1,1 @@
-string a, b = "a_", "b_";
-print(a);
-print(b);
-a = "dfd";
-print(a);
+create_row(3, ["hello", "world", "!"]);

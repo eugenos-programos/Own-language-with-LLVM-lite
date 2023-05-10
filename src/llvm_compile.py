@@ -9,6 +9,7 @@ from src.RowVariable import RowVariable
 from src.TableVariable import TableVariable
 import time
 import os
+from llvmlite import binding
 
 
 class ProgramCompiler:
@@ -25,11 +26,26 @@ class ProgramCompiler:
 
     def load_builtin_funcs(self):
         self.__load_print_func()
+        self.__load_length_func()
+        self.__load_create_row_func()
 
     def __load_print_func(self):
         self.__print_func_arg_types = [ir.IntType(8).as_pointer()]
         printf_ty = ir.FunctionType(ir.IntType(32), self.__print_func_arg_types, var_arg=True)
         self.__print_func = ir.Function(self.module, printf_ty, name="printf")
+
+    def __load_length_func(self):
+        self.__length_func_arg_types = []
+        leng_ty = ir.FunctionType(ir.IntType(32), self.__length_func_arg_types)
+        self.__length_func = ir.Function(self.module, leng_ty, name='length')
+
+    def __load_create_row_func(self):
+        self.__create_row_arg_types = [ir.ArrayType(ir.IntType(8), 15).as_pointer(), ir.IntType(32), ir.IntType(32)]
+        create_row_ty = ir.FunctionType(
+            ir.IntType(8).as_pointer().as_pointer(),
+            self.__create_row_arg_types
+            )
+        self.__create_row_func = ir.Function(self.module, create_row_ty, name='print_row_or_column')
 
     def process_numb_expr(self, ctx:LangParser.NumbExprContext):
         first_operand = float(str(ctx.numbExpr(0).returnType().basicType().children[0]))
@@ -68,6 +84,24 @@ class ProgramCompiler:
         fmt_arg = self.main_builder.bitcast(ptr, *self.__print_func_arg_types)
         self.main_builder.call(self.__print_func, [fmt_arg, variable_arg])
 
+    def call_create_row_func(self, n_var, vars):
+        arg_2 = ir.Constant(ir.IntType(32), n_var)
+
+        vars = [var + '\0' + ' ' * (14 - len(var)) for var in vars]
+        print(vars)
+        
+        cvars = [ir.Constant(ir.ArrayType(ir.IntType(8), 15), bytearray(var, 'utf-8')) for var in vars]
+
+        arg_1 = ir.Constant(ir.ArrayType(ir.ArrayType(ir.IntType(8), 15), n_var), cvars)
+        arg_3 = ir.Constant(ir.IntType(32), 0)
+
+        ptr = self.main_builder.alloca(arg_1.type)
+        self.main_builder.store(arg_1, ptr)
+
+        f_arg = self.main_builder.bitcast(ptr, self.__create_row_arg_types[0])
+
+        self.main_builder.call(self.__create_row_func, [f_arg, arg_2, arg_3])
+
 
     def compile_program(self, file_name='ir_program.ll'):
         self.end_main_func()
@@ -78,10 +112,12 @@ class ProgramCompiler:
         print("Program is converting from IR into executable file")
         os.system(f"llvm-as {file_name} -o mylang.bc")
         os.system(f"clang -c -emit-llvm src/main.c -o main.bc")
-        os.system(f"clang mylang.bc main.bc -o executable")
+        os.system(f"clang -c -emit-llvm src/hello.c -o help.bc")
+        os.system(f"clang mylang.bc main.bc help.bc -o executable")
         os.system(f"rm main.bc mylang.bc")
 
     def start_main_func(self):
+        binding.load_library_permanently("langlib.so")
         main_type = ir.FunctionType(ir.IntType(32), [])
         self.main_func = ir.Function(self.module, main_type, name='run_llvmlite_compiler')
         self.main_builder = ir.IRBuilder(self.main_func.append_basic_block(name='entry'))
@@ -92,8 +128,18 @@ class ProgramCompiler:
     def convert_type(self, str_type):
         if str_type == 'numb':
             return ir.DoubleType()
+        elif str_type == 'string':
+            return ir.IntType(8).as_pointer()
+        elif str_type == 'row':
+            pass
+        elif str_type == 'table':
+            pass
+        elif str_type == 'column':
+            pass
+
         
     def start_local_func(self, func_name, return_type, arg_types):
+        print(func_name, return_type, arg_types)
         type_ = self.convert_type(return_type)
         func_type = ir.FunctionType(type_, (self.convert_type(arg_type) for arg_type in arg_types))
         self.local_function = ir.Function(self.module, func_type, name=func_name)
@@ -105,3 +151,6 @@ class ProgramCompiler:
         self.tmp_local_builder.ret(return_const)
         self.tmp_local_builder = None
         self.local_function = None
+
+    def incr_var(self, var: NumbVariable):
+        temp_val = self.main_builder()

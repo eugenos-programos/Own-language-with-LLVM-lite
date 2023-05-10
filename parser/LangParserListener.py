@@ -133,6 +133,7 @@ class LangParserListener(ParseTreeListener):
             self.local_func_vars[func_param] = func_params_types[func_index]
             self.addNewVariable(func_param, func_params_types[func_index], False)
 
+        self.program_compiler.start_local_func(func_name, func_type, func_params_types)
         self.function_vars[func_name] = self.local_func_params = get_dict(func_params_types, func_type, func_params)
         self.is_func_init = True
 
@@ -721,7 +722,10 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#listStmt.
     def exitListStmt(self, ctx:LangParser.ListStmtContext):
-        pass
+        if ctx.listStmt(0):
+            raise SemanticAnalyzerException("Only 1-dim lists are supported")
+        if ctx.NUMBER(0) and ctx.STRING(0):
+            pass
 
 
     # Enter a parse tree produced by LangParser#builtinFuncStmt.
@@ -750,6 +754,12 @@ class LangParserListener(ParseTreeListener):
     def exitReturnStmt(self, ctx:LangParser.ReturnStmtContext):
         pass
 
+    def extractListVals(self, ctx:LangParser.ListStmtContext):
+        vals = []
+        for idx, child in enumerate(ctx.children):
+            if idx != 0 and str(child) != ',' and idx != len(ctx.children) - 1:
+                vals.append(str(child))
+        return vals
 
     # Enter a parse tree produced by LangParser#createRowStmt.
     def enterCreateRowStmt(self, ctx:LangParser.CreateRowStmtContext):
@@ -757,7 +767,8 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#createRowStmt.
     def exitCreateRowStmt(self, ctx:LangParser.CreateRowStmtContext):
-        pass
+        vals = self.extractListVals(ctx.listStmt())
+        self.program_compiler.call_create_row_func(int(str(ctx.NUMBER())) if ctx.NUMBER() else 0, vals)
 
     # Enter a parse tree produced by LangParser#createTablStmt.
     def enterCreateTablStmt(self, ctx:LangParser.CreateTablStmtContext):

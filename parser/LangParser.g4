@@ -150,9 +150,8 @@ indexStmt:
     ;
 
 listStmt : L_SQBRACK 
-    (listStmt|NUMBER|STRING)?
-    (COMMA (listStmt|NUMBER|
-                    STRING))* 
+    (NUMBER|STRING)?
+    (COMMA (NUMBER|STRING))* 
         P_SQBRACK;
 
 builtinFuncStmt:
