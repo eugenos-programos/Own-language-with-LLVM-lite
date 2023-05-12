@@ -1,22 +1,26 @@
 from llvmlite import ir
+from src.configs import MAX_STR_SIZE
 
 
 class RowVariable:
-    def __init__(self, name:str, elements:tuple, el_type:str, builder:ir.builder.IRBuilder) -> None:
-        self.elements = elements
+    def __init__(self, name:str, value:tuple, builder:ir.builder.IRBuilder) -> None:
         self.name = name
-        self.type = ir.DoubleType() if el_type == 'numb' else ir.IntType(8)
+        cvars = [ir.Constant(ir.ArrayType(ir.IntType(8), MAX_STR_SIZE), bytearray(var, 'utf-8')) for var in value]
+        self.size = len(value)
+        self.type = ir.ArrayType(ir.ArrayType(ir.IntType(8), MAX_STR_SIZE), self.size)
+        self.var = ir.Constant(self.type, cvars)
         self.builder = builder
+        self.compile_column_init()
 
-    def compile_row_init(self):
-        self.array_type = ir.ArrayType(self.type, len(self.elements))
-        self.row_var = ir.Constant(self.array_type, self.elements)
-        self.row_ptr = self.builder.alloca(self.array_type)
-        self.builder.store(self.row_var, self.row_ptr)
+    def compile_column_init(self):
+        self.ptr = self.builder.alloca(self.type)
+        self.builder.store(self.var, self.ptr)
+
+    def get_value(self):
+        return self.ptr
 
     def get_element(self, index:int):
-        val = self.builder.extract_value(self.row_ptr, index)
-        return val
-
+        return self.ptr
+        
     def insert_element(self, value:int|str, index):
-        return self.builder.insert_value(self.row_ptr, value, index)
+        return self.builder.insert_value(self.ptr, value, index)

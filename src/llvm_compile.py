@@ -5,7 +5,7 @@ from parser.LangParser import LangParser
 from src.ColumnVariable import ColumnVariable
 from src.NumbVariable import NumbVariable
 from src.StringVariable import StringVariable
-from src.RowVariable import RowVariable
+from src.RowVariable import RowVariable, MAX_STR_SIZE
 from src.TableVariable import TableVariable
 import time
 import os
@@ -14,7 +14,7 @@ from llvmlite import binding
 
 class ProgramCompiler:
     def __init__(self, listener) -> None:
-        print("Program translation into IR code is started...")
+        print("Program translation into IR code was started...")
         self.module = ir.Module()
         self.module.triple = "x86_64-pc-linux-gnu"
         self.listener = listener
@@ -28,6 +28,7 @@ class ProgramCompiler:
         self.__load_print_func()
         self.__load_length_func()
         self.__load_print_row_col_func()
+        self.__load_read_str_func()
 
     def __load_print_func(self):
         self.__print_func_arg_types = [ir.IntType(8).as_pointer()]
@@ -40,12 +41,20 @@ class ProgramCompiler:
         self.__length_func = ir.Function(self.module, leng_ty, name='length')
 
     def __load_print_row_col_func(self):
-        self.__print_row_col_arg_types = [ir.ArrayType(ir.IntType(8), 15).as_pointer(), ir.IntType(32), ir.IntType(32)]
+        self.__print_row_col_arg_types = [ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer(), ir.IntType(32), ir.IntType(32)]
         print_row_col_ty = ir.FunctionType(
-            ir.IntType(8).as_pointer().as_pointer(),
+            ir.VoidType(),
             self.__print_row_col_arg_types
             )
         self.__print_row_col_func = ir.Function(self.module, print_row_col_ty, name='print_row_or_column')
+
+    def __load_read_str_func(self):
+        self.__read_str_arg_types = []
+        read_str_ty = ir.FunctionType(
+            StringVariable.type,
+            self.__read_str_arg_types
+        )
+        self.__read_str_func = ir.Function(self.module, read_str_ty, name='read_string')
 
     def process_numb_expr(self, ctx:LangParser.NumbExprContext):
         first_operand = float(str(ctx.numbExpr(0).returnType().basicType().children[0]))
@@ -63,6 +72,12 @@ class ProgramCompiler:
         elif isinstance(variable, StringVariable):
             fmt = "%s\n\0"
             variable_arg = variable.get_value()
+        elif isinstance(variable, (ColumnVariable, RowVariable)):
+            arg_2 = ir.Constant(ir.IntType(32), variable.size)
+            arg_3 = ir.Constant(ir.IntType(32), int(isinstance(variable, ColumnVariable)))
+            f_arg = self.main_builder.bitcast(variable.ptr, self.__print_row_col_arg_types[0])
+            print("!!!", self.main_builder.call(self.__print_row_col_func, [f_arg, arg_2, arg_3]))
+            return
         elif isinstance(variable, str):
             fmt = "%s\n\0"
             variable += '\0'
@@ -84,22 +99,21 @@ class ProgramCompiler:
         fmt_arg = self.main_builder.bitcast(ptr, *self.__print_func_arg_types)
         self.main_builder.call(self.__print_func, [fmt_arg, variable_arg])
 
-    def call_print_row_col_func(self, n_var, vars, is_row=True):
+    def __generate_random_name(self):
+        import random
+        import string
 
-        vars = [var + '\0' + ' ' * (14 - len(var)) for var in vars]
-        
-        cvars = [ir.Constant(ir.ArrayType(ir.IntType(8), 15), bytearray(var, 'utf-8')) for var in vars]
+        rand_name = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=5))
+        return rand_name
 
-        arg_1 = ir.Constant(ir.ArrayType(ir.ArrayType(ir.IntType(8), 15), n_var), cvars)
-        arg_2 = ir.Constant(ir.IntType(32), n_var)
-        arg_3 = ir.Constant(ir.IntType(32), int(is_row))
+    def call_create_row_col_func(self, vars, is_col=False):
+        vars = [var + '\0' + ' ' * (MAX_STR_SIZE - 1 - len(var)) for var in vars]
+        if is_col:
+            variable = ColumnVariable(self.__generate_random_name(), vars, self.main_builder)
+        else:
+            variable = RowVariable(self.__generate_random_name(), vars, self.main_builder)
+        return variable
 
-        ptr = self.main_builder.alloca(arg_1.type)
-        self.main_builder.store(arg_1, ptr)
-
-        f_arg = self.main_builder.bitcast(ptr, self.__print_row_col_arg_types[0])
-
-        self.main_builder.call(self.__print_row_col_func, [f_arg, arg_2, arg_3])
 
 
     def compile_program(self, file_name='ir_program.ll'):
@@ -111,12 +125,11 @@ class ProgramCompiler:
         print("Program is converting from IR into executable file")
         os.system(f"llvm-as {file_name} -o mylang.bc")
         os.system(f"clang -c -emit-llvm src/main.c -o main.bc")
-        os.system(f"clang -c -emit-llvm src/func_utilities.c -o help.bc")
-        os.system(f"clang mylang.bc main.bc help.bc -o executable")
-        os.system(f"rm main.bc mylang.bc")
+        os.system(f"clang -c -emit-llvm src/func_utilities.c -o func_utilities.bc")
+        os.system(f"clang mylang.bc main.bc func_utilities.bc -o executable")
+        os.system(f"rm main.bc mylang.bc func_utilities.bc")
 
     def start_main_func(self):
-        binding.load_library_permanently("langlib.so")
         main_type = ir.FunctionType(ir.IntType(32), [])
         self.main_func = ir.Function(self.module, main_type, name='run_llvmlite_compiler')
         self.main_builder = ir.IRBuilder(self.main_func.append_basic_block(name='entry'))
@@ -152,4 +165,18 @@ class ProgramCompiler:
         self.local_function = None
 
     def incr_var(self, var: NumbVariable):
-        temp_val = self.main_builder()
+        temp_val = self.main_builder.load(var.ptr)
+        new_val = self.main_builder.fadd(temp_val, ir.Constant(ir.DoubleType(), 1.))
+        self.main_builder.store(new_val, var.ptr)
+        return var
+
+    def decr_var(self, var: NumbVariable):
+        temp_val = self.main_builder.load(var.ptr)
+        new_val = self.main_builder.fsub(temp_val, ir.Constant(ir.DoubleType(), 1.))
+        self.main_builder.store(new_val, var.ptr)
+        return var
+
+    def read_string(self) -> StringVariable:
+        var = StringVariable(self.__generate_random_name(), ' ' * (MAX_STR_SIZE - 1), self.main_builder)
+        self.main_builder.store(self.main_builder.call(self.__read_str_func, []), var.ptr)
+        return var

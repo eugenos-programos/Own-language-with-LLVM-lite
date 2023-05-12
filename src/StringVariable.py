@@ -1,14 +1,18 @@
 from llvmlite import ir
+from src.configs import MAX_STR_SIZE
 
 
 class StringVariable:
 
+    type = ir.ArrayType(ir.IntType(8), MAX_STR_SIZE)
+
     def __init__(self, name:str, value:str, builder:ir.builder.IRBuilder) -> None:
         self.name = name
+        if len(value) != MAX_STR_SIZE - 1:
+            raise ValueError("Incorrect string - {}".format(value))
         value += '\0'
-        self.type = ir.ArrayType(ir.IntType(8), len(value))
         self.var = ir.Constant(
-            ir.ArrayType(ir.IntType(8), len(value)),
+            self.type,
             bytearray(value.encode("utf8"))
         )
         self.builder = builder

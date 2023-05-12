@@ -468,7 +468,14 @@ class LangParserListener(ParseTreeListener):
         if var_type == 'numb':
             self.global_vars[str_name] = NumbVariable(str_name, value, self.program_compiler.main_builder)
         elif var_type == 'string':
-            self.global_vars[str_name] = StringVariable(str_name, value, self.program_compiler.main_builder)
+            if not isinstance(value, StringVariable):
+                self.global_vars[str_name] = StringVariable(str_name, value, self.program_compiler.main_builder)
+            else:
+                self.global_vars[str_name] = value
+        elif var_type == 'row' or var_type == 'column':
+            if not isinstance(value, (ColumnVariable, RowVariable)):
+                raise ValueError("Incorrect assign value - {} --- {}".format(var_type, value))
+            self.global_vars[str_name] = value
 
 
     def findNumbExprResult(self, ctx:LangParser.NumbExprContext):
@@ -484,7 +491,12 @@ class LangParserListener(ParseTreeListener):
                     value = str(expr.basicType().STRING())
                     return value
             elif expr.builtinFuncStmt():
-                pass
+                func_expr: LangParser.BuiltinFuncStmtContext = expr.builtinFuncStmt()
+                if func_expr.createColStmt() or func_expr.createRowStmt():
+                    var = self.get_row_col_var(func_expr.createColStmt() if func_expr.createColStmt() else func_expr.createRowStmt())
+                    return var
+                if func_expr.readStrStmt():
+                    return self.program_compiler.read_string()
             elif expr.indexStmt():
                 pass
         elif ctx.boolNumbSign():
@@ -512,7 +524,7 @@ class LangParserListener(ParseTreeListener):
             self.addNewVariable(str(var_ctxt), var_type)
 
 
-    # Enter a parse tree produced by LangParser#incDecrStat.
+    # Enter a parse tree produced by LangParser#incStat.
     def enterIncDecrStat(self, ctx:LangParser.IncDecrStatContext):
         pass
 
@@ -523,6 +535,13 @@ class LangParserListener(ParseTreeListener):
             raise SemanticAnalyzerException("Increment and decrement are used for number variables")
         if is_const:
             raise SemanticAnalyzerException(f"Variable {str(ctx.ID())} is constant")
+        var_name = str(ctx.ID())
+        var = self.global_vars.get(var_name)
+        if ctx.PLUS():
+            self.program_compiler.incr_var(var) 
+        else:
+            self.global_vars[var_name] = self.program_compiler.decr_var(var)
+
 
     # Enter a parse tree produced by LangParser#assignSign.
     def enterAssignSign(self, ctx:LangParser.AssignSignContext):
@@ -765,10 +784,16 @@ class LangParserListener(ParseTreeListener):
     def enterCreateRowStmt(self, ctx:LangParser.CreateRowStmtContext):
         pass
 
+    def get_row_col_var(self, ctx:LangParser.CreateColStmtContext|LangParser.CreateRowStmtContext):
+        vals = self.extractListVals(ctx.listStmt())
+        n_vals = int(str(ctx.NUMBER())) if ctx.NUMBER() else 0
+        if len(vals) != n_vals:
+            raise SemanticAnalyzerException("Input list number mismatch")
+        return self.program_compiler.call_create_row_col_func(vals, isinstance(ctx, LangParser.CreateColStmtContext))
+
     # Exit a parse tree produced by LangParser#createRowStmt.
     def exitCreateRowStmt(self, ctx:LangParser.CreateRowStmtContext):
-        vals = self.extractListVals(ctx.listStmt())
-        self.program_compiler.call_create_row_func(int(str(ctx.NUMBER())) if ctx.NUMBER() else 0, vals)
+        pass
 
     # Enter a parse tree produced by LangParser#createTablStmt.
     def enterCreateTablStmt(self, ctx:LangParser.CreateTablStmtContext):
@@ -776,7 +801,11 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#createTablStmt.
     def exitCreateTablStmt(self, ctx:LangParser.CreateTablStmtContext):
-        pass
+        vals = self.extractListVals(ctx.listStmt())
+        n_vals = int(str(ctx.NUMBER())) if ctx.NUMBER() else 0
+        if len(vals) != n_vals:
+            raise SemanticAnalyzerException("Input list number mismatch")
+        self.program_compiler.call_print_row_col_func(n_vals, vals, True)
 
 
     # Enter a parse tree produced by LangParser#createColStmt.
