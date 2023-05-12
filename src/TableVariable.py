@@ -1,19 +1,28 @@
 from llvmlite import ir
+from src.configs import MAX_STR_SIZE
 
 
 class TableVariable:
-    def __init__(self, name:str, elements:tuple, el_type:str, builder:ir.builder.IRBuilder) -> None:
-        self.elements = elements
+    def __init__(self, name:str, elements:tuple, n_cols, n_rows, builder:ir.builder.IRBuilder) -> None:
         self.name = name
-        els_type = ir.DoubleType() if el_type == 'numb' else ir.IntType(8)
-        self.type = ir.ArrayType(els_type)
+        cvars = [ir.Constant(ir.ArrayType(ir.IntType(8), MAX_STR_SIZE), bytearray(var, 'utf-8')) for var in elements]
+        self.type = ir.ArrayType(ir.ArrayType(ir.IntType(8), MAX_STR_SIZE), n_rows * n_cols)
+        self.var = ir.Constant(self.type, cvars)
         self.builder = builder
+        self.n_rows = n_rows
+        self.n_cols = n_cols
+        self.compile_init()
 
-    def compile_row_init(self):
-        self.array_type = ir.ArrayType(self.type, len(self.elements))
-        self.table_var = ir.Constant(self.array_type, self.elements)
-        self.table_ptr = self.builder.alloca(self.array_type)
-        self.builder.store(self.table_var, self.table_ptr)
+    def compile_init(self):
+        self.ptr = self.builder.alloca(self.type)
+        self.builder.store(self.var, self.ptr)
+
+    def set_value(self, value):
+        self.n_cols = value.n_cols
+        self.n_rows = value.n_rows
+        self.type = value.type
+        self.var = value.var
+        self.compile_init()
 
     def get_element(self, index:int):
         val = self.builder.extract_value(self.table_ptr, index)

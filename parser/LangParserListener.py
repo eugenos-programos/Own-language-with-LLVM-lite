@@ -472,8 +472,8 @@ class LangParserListener(ParseTreeListener):
                 self.global_vars[str_name] = StringVariable(str_name, value, self.program_compiler.main_builder)
             else:
                 self.global_vars[str_name] = value
-        elif var_type == 'row' or var_type == 'column':
-            if not isinstance(value, (ColumnVariable, RowVariable)):
+        elif var_type in ['row', 'column', 'table']:
+            if not isinstance(value, (ColumnVariable, RowVariable, TableVariable)):
                 raise ValueError("Incorrect assign value - {} --- {}".format(var_type, value))
             self.global_vars[str_name] = value
 
@@ -495,8 +495,20 @@ class LangParserListener(ParseTreeListener):
                 if func_expr.createColStmt() or func_expr.createRowStmt():
                     var = self.get_row_col_var(func_expr.createColStmt() if func_expr.createColStmt() else func_expr.createRowStmt())
                     return var
-                if func_expr.readStrStmt():
+                elif func_expr.readStrStmt():
                     return self.program_compiler.read_string()
+                elif func_expr.createTablStmt():
+                    func_ctxt : LangParser.CreateTablStmtContext = func_expr.createTablStmt()
+                    if len(func_ctxt.NUMBER()) > 2:
+                        raise SemanticAnalyzerException("Table can be only 2-dimensional")
+                    n_cols = int(float(str(func_ctxt.NUMBER(0)))) if func_ctxt.NUMBER(0) else 0
+                    n_rows = int(float(str(func_ctxt.NUMBER(1)))) if func_ctxt.NUMBER(1) else int(bool(n_cols))
+                    if func_ctxt.listStmt():
+                        vals = self.extractListVals(func_ctxt.listStmt())
+                    else:   vals = []
+                    if n_cols < 0 or n_rows < 0 or n_rows * n_cols < len(vals):
+                        raise SemanticAnalyzerException("Invalid n_rows and n_cols combination")
+                    return self.program_compiler.create_table(vals, n_rows, n_cols)
             elif expr.indexStmt():
                 pass
         elif ctx.boolNumbSign():
@@ -801,11 +813,7 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#createTablStmt.
     def exitCreateTablStmt(self, ctx:LangParser.CreateTablStmtContext):
-        vals = self.extractListVals(ctx.listStmt())
-        n_vals = int(str(ctx.NUMBER())) if ctx.NUMBER() else 0
-        if len(vals) != n_vals:
-            raise SemanticAnalyzerException("Input list number mismatch")
-        self.program_compiler.call_print_row_col_func(n_vals, vals, True)
+        pass
 
 
     # Enter a parse tree produced by LangParser#createColStmt.

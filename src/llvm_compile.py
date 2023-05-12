@@ -29,6 +29,7 @@ class ProgramCompiler:
         self.__load_length_func()
         self.__load_print_row_col_func()
         self.__load_read_str_func()
+        self.__load_print_tabl_func()
 
     def __load_print_func(self):
         self.__print_func_arg_types = [ir.IntType(8).as_pointer()]
@@ -56,6 +57,19 @@ class ProgramCompiler:
         )
         self.__read_str_func = ir.Function(self.module, read_str_ty, name='read_string')
 
+    def __load_print_tabl_func(self):
+        self.__print_tabl_arg_types = [
+            ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer(),
+            ir.IntType(32),
+            ir.IntType(32)
+        ]
+        print_row_col_ty = ir.FunctionType(
+            ir.VoidType(),
+            self.__print_row_col_arg_types
+            )
+        self.__print_table_func = ir.Function(self.module, print_row_col_ty, name='print_table')
+
+
     def process_numb_expr(self, ctx:LangParser.NumbExprContext):
         first_operand = float(str(ctx.numbExpr(0).returnType().basicType().children[0]))
         second_operand = float(str(ctx.numbExpr(1).returnType().basicType().children[0]))
@@ -76,7 +90,7 @@ class ProgramCompiler:
             arg_2 = ir.Constant(ir.IntType(32), variable.size)
             arg_3 = ir.Constant(ir.IntType(32), int(isinstance(variable, ColumnVariable)))
             f_arg = self.main_builder.bitcast(variable.ptr, self.__print_row_col_arg_types[0])
-            print("!!!", self.main_builder.call(self.__print_row_col_func, [f_arg, arg_2, arg_3]))
+            self.main_builder.call(self.__print_row_col_func, [f_arg, arg_2, arg_3])
             return
         elif isinstance(variable, str):
             fmt = "%s\n\0"
@@ -90,7 +104,13 @@ class ProgramCompiler:
         elif isinstance(variable, float):
             fmt = "%.3f\n\0"
             variable_arg = ir.Constant(ir.DoubleType(), variable)
-
+        elif isinstance(variable, TableVariable):
+            n_r = ir.Constant(ir.IntType(32), variable.n_rows)
+            n_c = ir.Constant(ir.IntType(32), variable.n_cols)
+            tabl = self.main_builder.bitcast(variable.ptr, self.__print_tabl_arg_types[0])
+            self.main_builder.call(self.__print_table_func, [tabl, n_r, n_c])
+            return
+    
         c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
                                 bytearray(fmt.encode("utf8")))
         ptr = self.main_builder.alloca(c_fmt.type)
@@ -114,7 +134,12 @@ class ProgramCompiler:
             variable = RowVariable(self.__generate_random_name(), vars, self.main_builder)
         return variable
 
-
+    def create_table(self, vars, n_col, n_row):
+        vars = [var + '\0' + ' ' * (MAX_STR_SIZE - 1 - len(var)) for var in vars]
+        if n_col * n_row != vars:
+            while len(vars) != n_col * n_row:
+                vars.append(" " * (MAX_STR_SIZE - 1) + '\0')
+        return TableVariable(self.__generate_random_name, vars, n_col, n_row, self.main_builder)
 
     def compile_program(self, file_name='ir_program.ll'):
         self.end_main_func()

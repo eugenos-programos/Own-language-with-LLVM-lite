@@ -10,11 +10,17 @@ class RowVariable:
         self.type = ir.ArrayType(ir.ArrayType(ir.IntType(8), MAX_STR_SIZE), self.size)
         self.var = ir.Constant(self.type, cvars)
         self.builder = builder
-        self.compile_column_init()
+        self.compile_init()
 
-    def compile_column_init(self):
+    def compile_init(self):
         self.ptr = self.builder.alloca(self.type)
         self.builder.store(self.var, self.ptr)
+
+    def set_value(self, value):
+        self.size = value.size
+        self.type = value.type
+        self.var = value.var
+        self.compile_init()
 
     def get_value(self):
         return self.ptr
