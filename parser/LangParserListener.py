@@ -25,10 +25,8 @@ class LangParserListener(ParseTreeListener):
         # built-in functions 
         # output is a number == it depends on {number} param 
         "print": get_dict(["table/row/column/string/numb"], "void"),
-        "length": get_dict(["table/row/column/string"], "numb"),
+        "length": get_dict(["table/row/column"], "numb"),
         "reshape": get_dict(["table", "numb", "numb"], "table"),
-        "del_col": get_dict(["table", "numb"], "table"),
-        "del_row": get_dict(["table", "numb"], "table"),
         "del": get_dict(["row/column", "numb"], "0"),
         "insert": get_dict(["column/row", "string/numb", "numb"], "0"), 
         "max": get_dict(["table/row/column"], "numb"),
@@ -66,6 +64,7 @@ class LangParserListener(ParseTreeListener):
     def enterProgram(self, ctx:LangParser.ProgramContext):
         # function vars 
         self.is_func_init = False
+        self.main_func_started = False
         self.local_func_vars = {}
         self.local_func_params = {}
         self.local_func_name = None
@@ -111,6 +110,8 @@ class LangParserListener(ParseTreeListener):
         for func_param in self.local_func_vars:
             self.global_vars.pop(func_param)
         self.is_func_init = False
+        if self.program_compiler.local_function is not None:
+            self.program_compiler.end_local_func()
 
     def checkAndInitUserFunc(self, ctx:LangParser.FuncContext):
         func_type = str(ctx.children[0].children[0]) if str(ctx.children[0]) != 'void' else 'void'
@@ -119,6 +120,7 @@ class LangParserListener(ParseTreeListener):
 
         func_params = list(map(str, ctx.ID()[1:]))
         func_params_types = list(map(lambda ctx: str(ctx.children[0]), ctx.basicTypeName()[int(func_type != 'void'):]))
+        self.program_compiler.start_local_func(func_name, func_type, func_params_types)
 
         if self.function_vars.get(func_name) is not None and self.function_vars.get(func_name).get("params") == func_params_types and\
             func_type == self.function_vars.get(func_name).get("return_type"): 
@@ -131,15 +133,16 @@ class LangParserListener(ParseTreeListener):
             if self.local_func_vars.get(func_param) is not None:
                 raise SemanticAnalyzerException(f"Function parameter {func_param} is already defined")
             self.local_func_vars[func_param] = func_params_types[func_index]
-            self.addNewVariable(func_param, func_params_types[func_index], False)
+            self.addNewVariable(func_param, func_params_types[func_index], self.program_compiler.local_function.args[func_index], False)
 
-        self.program_compiler.start_local_func(func_name, func_type, func_params_types)
         self.function_vars[func_name] = self.local_func_params = get_dict(func_params_types, func_type, func_params)
         self.is_func_init = True
 
     # Enter a parse tree produced by LangParser#stat.
     def enterStat(self, ctx:LangParser.StatContext):
-        pass
+        if not self.main_func_started:
+            self.program_compiler.start_main_func()
+        self.main_func_started = True
 
     # Exit a parse tree produced by LangParser#stat.
     def exitStat(self, ctx:LangParser.StatContext):
@@ -151,6 +154,7 @@ class LangParserListener(ParseTreeListener):
         if isinstance(ctx.parentCtx, LangParser.ForStatContext):
             self.initUserForLocSpace(ctx.parentCtx)
         if not self.is_func_init and isinstance(ctx.parentCtx, LangParser.FuncContext):
+            print("func_stat")
             self.checkAndInitUserFunc(ctx.parentCtx)
 
     def initUserForLocSpace(self, ctx:LangParser.ForStatContext):
@@ -465,6 +469,9 @@ class LangParserListener(ParseTreeListener):
                 raise SemanticAnalyzerException(f"Function with name '{str_name}' is already defined")
         if self.global_vars.get(str_name):
                 raise SemanticAnalyzerException(f"Variable with name '{str_name}' is already defined")
+        if isinstance(value, ir.values.Argument):
+            self.global_vars[str_name] = (var_type, value)
+            return
         if var_type == 'numb':
             self.global_vars[str_name] = NumbVariable(str_name, value, self.program_compiler.main_builder)
         elif var_type == 'string':
@@ -509,18 +516,45 @@ class LangParserListener(ParseTreeListener):
                     if n_cols < 0 or n_rows < 0 or n_rows * n_cols < len(vals):
                         raise SemanticAnalyzerException("Invalid n_rows and n_cols combination")
                     return self.program_compiler.create_table(vals, n_rows, n_cols)
+                elif func_expr.reshapeStmt():
+                    if not func_expr.reshapeStmt().numbExpr(0).returnType().basicType().ID():
+                        raise SemanticAnalyzerException("Invalid reshape function call")
+                    name = str(func_expr.reshapeStmt().numbExpr().returnType().basicType().ID())
+                    if not self.global_vars.get(name):
+                        raise SemanticAnalyzerException("Unknown var name - {}".format(name))
+                    var = self.global_vars.get(name)
+                    arg1 = self.findExpressionOutType(func_expr.reshapeStmt().numbExpr(1))
+                    arg2 = self.findExpressionOutType(func_expr.reshapeStmt().numbExpr(2))
+                    if not isinstance(arg1, (NumbVariable, int)) or not isinstance(arg2, (NumbVariable, int)):
+                        raise SemanticAnalyzerException("Invalid operator for reshape function")
+                    self.program_compiler.reshape(var, arg1, arg2)
+                elif func_expr.lengthStmt():
+                    return self.findLengthStmtCtxtResult(func_expr.lengthStmt())
+
             elif expr.indexStmt():
                 pass
         elif ctx.boolNumbSign():
-            result = self.findExprResultWithTwoOperands(
-                self, 
+            result = self.findExprResultWithTwoOperands( 
                 ctx.numbExpr(0),
                 ctx.boolNumbSign(),
                 ctx.numbExpr(1)
                 )
+            return result
+        
+    def findLengthStmtCtxtResult(self, ctx: LangParser.LengthStmtContext):
+        result = self.findNumbExprResult(ctx.numbExpr())
+        if isinstance(result, TableVariable):
+            cvar = ir.Constant(NumbVariable.type, result.n_cols * result.n_rows) 
+        else:
+            cvar = ir.Constant(NumbVariable.type, result.size)
+        return NumbVariable(generate_random_name(), cvar, self.program_compiler.main_builder)
 
     def findExprResultWithTwoOperands(self, nexprctx1:LangParser.NumbExprContext, signctxt:LangParser.BoolNumbSignContext, nexprctx2:LangParser.NumbExprContext):
-        pass
+        res1 = self.findNumbExprResult(nexprctx1)
+        res2 = self.findNumbExprResult(nexprctx2)
+        if isinstance(res1, NumbVariable) and isinstance(res2, NumbVariable):
+            return NumbVariable(generate_random_name() ,self.program_compiler.main_builder.fadd(res1.var, res2.var))
+
 
     # Enter a parse tree produced by LangParser#varDeclStmt.
     def enterVarDeclStmt(self, ctx:LangParser.VarDeclStmtContext):
@@ -799,6 +833,9 @@ class LangParserListener(ParseTreeListener):
     def get_row_col_var(self, ctx:LangParser.CreateColStmtContext|LangParser.CreateRowStmtContext):
         vals = self.extractListVals(ctx.listStmt())
         n_vals = int(str(ctx.NUMBER())) if ctx.NUMBER() else 0
+        if len(vals) < n_vals:
+            while len(vals) != n_vals:
+                vals.append(" ")
         if len(vals) != n_vals:
             raise SemanticAnalyzerException("Input list number mismatch")
         return self.program_compiler.call_create_row_col_func(vals, isinstance(ctx, LangParser.CreateColStmtContext))

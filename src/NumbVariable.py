@@ -4,12 +4,15 @@ from llvmlite import ir
 class NumbVariable:
     type = ir.DoubleType()
 
-    def __init__(self, name:str, value:float, builder:ir.builder.IRBuilder) -> None:
-        self.name = name
-        self.var = ir.Constant(
+    def __init__(self, name:str, value:float|ir.Constant, builder:ir.builder.IRBuilder) -> None:
+        if isinstance(value, ir.Constant):
+            self.var = value
+        else:
+            self.var = ir.Constant(
             self.type,
             value
         )
+        self.name = name
         self.builder = builder
         self.compile_numb_init()
 

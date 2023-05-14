@@ -1,6 +1,4 @@
 import llvmlite.ir as ir
-import llvmlite.binding as llvm
-from ctypes import CFUNCTYPE
 from parser.LangParser import LangParser
 from src.ColumnVariable import ColumnVariable
 from src.NumbVariable import NumbVariable
@@ -9,7 +7,7 @@ from src.RowVariable import RowVariable, MAX_STR_SIZE
 from src.TableVariable import TableVariable
 import time
 import os
-from llvmlite import binding
+from src.utils import generate_random_name
 
 
 class ProgramCompiler:
@@ -20,9 +18,9 @@ class ProgramCompiler:
         self.listener = listener
         self.numb_type = ir.DoubleType()
         self.load_builtin_funcs()
-        self.start_main_func()
         self.local_builders = []
         self.local_functions = []
+        self.local_function = None
 
     def load_builtin_funcs(self):
         self.__load_print_func()
@@ -119,19 +117,12 @@ class ProgramCompiler:
         fmt_arg = self.main_builder.bitcast(ptr, *self.__print_func_arg_types)
         self.main_builder.call(self.__print_func, [fmt_arg, variable_arg])
 
-    def __generate_random_name(self):
-        import random
-        import string
-
-        rand_name = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=5))
-        return rand_name
-
     def call_create_row_col_func(self, vars, is_col=False):
         vars = [var + '\0' + ' ' * (MAX_STR_SIZE - 1 - len(var)) for var in vars]
         if is_col:
-            variable = ColumnVariable(self.__generate_random_name(), vars, self.main_builder)
+            variable = ColumnVariable(generate_random_name(), vars, self.main_builder)
         else:
-            variable = RowVariable(self.__generate_random_name(), vars, self.main_builder)
+            variable = RowVariable(generate_random_name(), vars, self.main_builder)
         return variable
 
     def create_table(self, vars, n_col, n_row):
@@ -139,7 +130,7 @@ class ProgramCompiler:
         if n_col * n_row != vars:
             while len(vars) != n_col * n_row:
                 vars.append(" " * (MAX_STR_SIZE - 1) + '\0')
-        return TableVariable(self.__generate_random_name, vars, n_col, n_row, self.main_builder)
+        return TableVariable(generate_random_name, vars, n_col, n_row, self.main_builder)
 
     def compile_program(self, file_name='ir_program.ll'):
         self.end_main_func()
@@ -168,25 +159,29 @@ class ProgramCompiler:
         elif str_type == 'string':
             return ir.IntType(8).as_pointer()
         elif str_type == 'row':
-            pass
+            return ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()
         elif str_type == 'table':
-            pass
+            return ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()
         elif str_type == 'column':
-            pass
+            return ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()
+        elif str_type == 'void':
+            return ir.DoubleType()
 
         
     def start_local_func(self, func_name, return_type, arg_types):
-        print(func_name, return_type, arg_types)
+        if self.local_function is not None:
+            return
         type_ = self.convert_type(return_type)
-        func_type = ir.FunctionType(type_, (self.convert_type(arg_type) for arg_type in arg_types))
+        func_type = ir.FunctionType(type_, [self.convert_type(arg_type) for arg_type in arg_types])
         self.local_function = ir.Function(self.module, func_type, name=func_name)
-        self.tmp_local_builder = ir.builder.IRBuilder(function.append_basic_block(name='entry'))
-        self.local_builders.append(self.tmp_local_builder)
+        self.main_builder = ir.builder.IRBuilder(self.local_function.append_basic_block(name='entry'))
+        self.local_builders.append(self.main_builder)
         self.local_functions.append(self.local_function)
 
-    def end_local_func(self, return_const:ir.Constant):
-        self.tmp_local_builder.ret(return_const)
-        self.tmp_local_builder = None
+    def end_local_func(self, return_const:ir.Constant=None):
+        if return_const is None:
+            self.main_builder.ret(ir.Constant(ir.DoubleType(), 0.0))
+        self.main_builder.ret(return_const)
         self.local_function = None
 
     def incr_var(self, var: NumbVariable):
@@ -202,6 +197,19 @@ class ProgramCompiler:
         return var
 
     def read_string(self) -> StringVariable:
-        var = StringVariable(self.__generate_random_name(), ' ' * (MAX_STR_SIZE - 1), self.main_builder)
+        var = StringVariable(generate_random_name(), ' ' * (MAX_STR_SIZE - 1), self.main_builder)
         self.main_builder.store(self.main_builder.call(self.__read_str_func, []), var.ptr)
         return var
+
+    def reshape(self, table: TableVariable, nc_new: int, nr_new: int):
+        nc_old = table.n_cols
+        nr_old = table.n_rows
+        if nc_old * nr_old != nc_new * nr_new:
+            raise ValueError("Cannot reshape table")
+        table.n_cols = nc_new
+        table.n_rows = nr_new
+
+    def del_el(self, obj_: RowVariable|ColumnVariable, el:str):
+        if isinstance(el, int):
+            el = str(el)
+        
