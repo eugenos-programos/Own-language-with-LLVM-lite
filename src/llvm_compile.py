@@ -20,7 +20,9 @@ class ProgramCompiler:
         self.load_builtin_funcs()
         self.local_builders = []
         self.local_functions = []
+        self.loc_funcs = {}
         self.local_function = None
+        self.main_func = None
 
     def load_builtin_funcs(self):
         self.__load_print_func()
@@ -31,7 +33,8 @@ class ProgramCompiler:
 
     def __load_print_func(self):
         self.__print_func_arg_types = [ir.IntType(8).as_pointer()]
-        printf_ty = ir.FunctionType(ir.IntType(32), self.__print_func_arg_types, var_arg=True)
+        printf_ty = ir.FunctionType(ir.IntType(
+            32), self.__print_func_arg_types, var_arg=True)
         self.__print_func = ir.Function(self.module, printf_ty, name="printf")
 
     def __load_length_func(self):
@@ -40,12 +43,14 @@ class ProgramCompiler:
         self.__length_func = ir.Function(self.module, leng_ty, name='length')
 
     def __load_print_row_col_func(self):
-        self.__print_row_col_arg_types = [ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer(), ir.IntType(32), ir.IntType(32)]
+        self.__print_row_col_arg_types = [ir.ArrayType(ir.IntType(
+            8), MAX_STR_SIZE).as_pointer(), ir.IntType(32), ir.IntType(32)]
         print_row_col_ty = ir.FunctionType(
             ir.VoidType(),
             self.__print_row_col_arg_types
-            )
-        self.__print_row_col_func = ir.Function(self.module, print_row_col_ty, name='print_row_or_column')
+        )
+        self.__print_row_col_func = ir.Function(
+            self.module, print_row_col_ty, name='print_row_or_column')
 
     def __load_read_str_func(self):
         self.__read_str_arg_types = []
@@ -53,7 +58,8 @@ class ProgramCompiler:
             StringVariable.type,
             self.__read_str_arg_types
         )
-        self.__read_str_func = ir.Function(self.module, read_str_ty, name='read_string')
+        self.__read_str_func = ir.Function(
+            self.module, read_str_ty, name='read_string')
 
     def __load_print_tabl_func(self):
         self.__print_tabl_arg_types = [
@@ -64,13 +70,15 @@ class ProgramCompiler:
         print_row_col_ty = ir.FunctionType(
             ir.VoidType(),
             self.__print_row_col_arg_types
-            )
-        self.__print_table_func = ir.Function(self.module, print_row_col_ty, name='print_table')
+        )
+        self.__print_table_func = ir.Function(
+            self.module, print_row_col_ty, name='print_table')
 
-
-    def process_numb_expr(self, ctx:LangParser.NumbExprContext):
-        first_operand = float(str(ctx.numbExpr(0).returnType().basicType().children[0]))
-        second_operand = float(str(ctx.numbExpr(1).returnType().basicType().children[0]))
+    def process_numb_expr(self, ctx: LangParser.NumbExprContext):
+        first_operand = float(
+            str(ctx.numbExpr(0).returnType().basicType().children[0]))
+        second_operand = float(
+            str(ctx.numbExpr(1).returnType().basicType().children[0]))
         nexpr_res = self.main_builder.fadd(
             self.numb_type(first_operand),
             self.numb_type(second_operand)
@@ -86,9 +94,12 @@ class ProgramCompiler:
             variable_arg = variable.get_value()
         elif isinstance(variable, (ColumnVariable, RowVariable)):
             arg_2 = ir.Constant(ir.IntType(32), variable.size)
-            arg_3 = ir.Constant(ir.IntType(32), int(isinstance(variable, ColumnVariable)))
-            f_arg = self.main_builder.bitcast(variable.ptr, self.__print_row_col_arg_types[0])
-            self.main_builder.call(self.__print_row_col_func, [f_arg, arg_2, arg_3])
+            arg_3 = ir.Constant(ir.IntType(32), int(
+                isinstance(variable, ColumnVariable)))
+            f_arg = self.main_builder.bitcast(
+                variable.ptr, self.__print_row_col_arg_types[0])
+            self.main_builder.call(self.__print_row_col_func, [
+                                   f_arg, arg_2, arg_3])
             return
         elif isinstance(variable, str):
             fmt = "%s\n\0"
@@ -105,12 +116,12 @@ class ProgramCompiler:
         elif isinstance(variable, TableVariable):
             n_r = ir.Constant(ir.IntType(32), variable.n_rows)
             n_c = ir.Constant(ir.IntType(32), variable.n_cols)
-            tabl = self.main_builder.bitcast(variable.ptr, self.__print_tabl_arg_types[0])
+            tabl = self.main_builder.bitcast(
+                variable.ptr, self.__print_tabl_arg_types[0])
             self.main_builder.call(self.__print_table_func, [tabl, n_r, n_c])
             return
-    
         c_fmt = ir.Constant(ir.ArrayType(ir.IntType(8), len(fmt)),
-                                bytearray(fmt.encode("utf8")))
+                            bytearray(fmt.encode("utf8")))
         ptr = self.main_builder.alloca(c_fmt.type)
         self.main_builder.store(c_fmt, ptr)
 
@@ -118,25 +129,44 @@ class ProgramCompiler:
         self.main_builder.call(self.__print_func, [fmt_arg, variable_arg])
 
     def call_create_row_col_func(self, vars, is_col=False):
-        vars = [var + '\0' + ' ' * (MAX_STR_SIZE - 1 - len(var)) for var in vars]
+        vars = [var + '\0' + ' ' * (MAX_STR_SIZE - 1 - len(var))
+                for var in vars]
         if is_col:
-            variable = ColumnVariable(generate_random_name(), vars, self.main_builder)
+            variable = ColumnVariable(
+                generate_random_name(), vars, self.main_builder)
         else:
-            variable = RowVariable(generate_random_name(), vars, self.main_builder)
+            variable = RowVariable(
+                generate_random_name(), vars, self.main_builder)
         return variable
 
+    def call_custom_func(self, name, args):
+        print(args)
+        var = NumbVariable(generate_random_name, 1., self.main_builder)
+        func, builder, type = self.loc_funcs.get(name)
+        self.main_builder.store(self.main_builder.call(func, args), var.ptr)
+        return var
+
     def create_table(self, vars, n_col, n_row):
-        vars = [var + '\0' + ' ' * (MAX_STR_SIZE - 1 - len(var)) for var in vars]
+        vars = [var + '\0' + ' ' * (MAX_STR_SIZE - 1 - len(var))
+                for var in vars]
         if n_col * n_row != vars:
             while len(vars) != n_col * n_row:
                 vars.append(" " * (MAX_STR_SIZE - 1) + '\0')
         return TableVariable(generate_random_name, vars, n_col, n_row, self.main_builder)
 
+    def call_reshape_func(self, arg1: TableVariable, arg2: NumbVariable, arg3: NumbVariable):
+        if not isinstance(arg1, TableVariable) and not isinstance(arg2, NumbVariable) and not isinstance(arg3, NumbVariable):
+            raise ValueError(
+                "Invalid arg types combination - {}, {}, {}".format(type(arg1), type(arg2), type(arg3)))
+        return TableVariable(generate_random_name(), arg1.var, arg2, arg3, self.main_builder)
+
     def compile_program(self, file_name='ir_program.ll'):
         self.end_main_func()
+        print(str(self.module))
         with open(file_name, "w") as ir_file:
             ir_file.write(str(self.module))
-        print("Program translation into IR code is finished. IR file - {}".format(file_name))
+        print(
+            "Program translation into IR code is finished. IR file - {}".format(file_name))
         time.sleep(1)
         print("Program is converting from IR into executable file")
         os.system(f"llvm-as {file_name} -o mylang.bc")
@@ -147,11 +177,15 @@ class ProgramCompiler:
 
     def start_main_func(self):
         main_type = ir.FunctionType(ir.IntType(32), [])
-        self.main_func = ir.Function(self.module, main_type, name='run_llvmlite_compiler')
-        self.main_builder = ir.IRBuilder(self.main_func.append_basic_block(name='entry'))
+        self.main_func = ir.Function(
+            self.module, main_type, name='run_llvmlite_compiler')
+        self.main_builder = ir.IRBuilder(
+            self.main_func.append_basic_block(name='entry'))
 
     def end_main_func(self):
-        self.main_builder.ret(ir.Constant(ir.IntType(32), 0))
+        print("dfdf")
+        if self.main_builder is not None:
+            self.main_builder.ret(ir.Constant(ir.IntType(32), 0))
 
     def convert_type(self, str_type):
         if str_type == 'numb':
@@ -167,49 +201,51 @@ class ProgramCompiler:
         elif str_type == 'void':
             return ir.DoubleType()
 
-        
     def start_local_func(self, func_name, return_type, arg_types):
         if self.local_function is not None:
             return
         type_ = self.convert_type(return_type)
-        func_type = ir.FunctionType(type_, [self.convert_type(arg_type) for arg_type in arg_types])
-        self.local_function = ir.Function(self.module, func_type, name=func_name)
-        self.main_builder = ir.builder.IRBuilder(self.local_function.append_basic_block(name='entry'))
-        self.local_builders.append(self.main_builder)
-        self.local_functions.append(self.local_function)
+        print("type-", type(type_))
+        func_type = ir.FunctionType(
+            type_, [self.convert_type(arg_type) for arg_type in arg_types])
+        self.local_function = ir.Function(
+            self.module, func_type, name=func_name)
+        self.main_builder = ir.builder.IRBuilder(
+            self.local_function.append_basic_block(name='entry'))
+        self.loc_funcs[func_name] = (
+            self.local_function, self.main_builder, func_type)
 
-    def end_local_func(self, return_const:ir.Constant=None):
+    def end_local_func(self, return_const: ir.Constant = None):
+        print(self.main_builder)
+        print(self.local_function)
         if return_const is None:
             self.main_builder.ret(ir.Constant(ir.DoubleType(), 0.0))
-        self.main_builder.ret(return_const)
+        else:
+            self.main_builder.ret(return_const.var)
         self.local_function = None
+        self.main_builder = None
 
     def incr_var(self, var: NumbVariable):
         temp_val = self.main_builder.load(var.ptr)
-        new_val = self.main_builder.fadd(temp_val, ir.Constant(ir.DoubleType(), 1.))
+        new_val = self.main_builder.fadd(
+            temp_val, ir.Constant(ir.DoubleType(), 1.))
         self.main_builder.store(new_val, var.ptr)
         return var
 
     def decr_var(self, var: NumbVariable):
         temp_val = self.main_builder.load(var.ptr)
-        new_val = self.main_builder.fsub(temp_val, ir.Constant(ir.DoubleType(), 1.))
+        new_val = self.main_builder.fsub(
+            temp_val, ir.Constant(ir.DoubleType(), 1.))
         self.main_builder.store(new_val, var.ptr)
         return var
 
     def read_string(self) -> StringVariable:
-        var = StringVariable(generate_random_name(), ' ' * (MAX_STR_SIZE - 1), self.main_builder)
-        self.main_builder.store(self.main_builder.call(self.__read_str_func, []), var.ptr)
+        var = StringVariable(generate_random_name(), ' ' *
+                             (MAX_STR_SIZE - 1), self.main_builder)
+        self.main_builder.store(self.main_builder.call(
+            self.__read_str_func, []), var.ptr)
         return var
 
-    def reshape(self, table: TableVariable, nc_new: int, nr_new: int):
-        nc_old = table.n_cols
-        nr_old = table.n_rows
-        if nc_old * nr_old != nc_new * nr_new:
-            raise ValueError("Cannot reshape table")
-        table.n_cols = nc_new
-        table.n_rows = nr_new
-
-    def del_el(self, obj_: RowVariable|ColumnVariable, el:str):
+    def del_el(self, obj_: RowVariable | ColumnVariable, el: str):
         if isinstance(el, int):
             el = str(el)
-        
