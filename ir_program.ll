@@ -4,26 +4,33 @@ target datalayout = ""
 
 declare i32 @"printf"(i8* %".1", ...)
 
+declare i32 @"length"()
+
+declare void @"print_row_or_column"([25 x i8]* %".1", i32 %".2", i32 %".3")
+
+declare [25 x i8] @"read_string"()
+
+declare void @"print_table"([25 x i8]* %".1", i32 %".2", i32 %".3")
+
+define double @"mean"()
+{
+entry:
+  %".2" = alloca double
+  store double 0x402a000000000000, double* %".2"
+  ret double 0x402a000000000000
+}
+
 define i32 @"run_llvmlite_compiler"()
 {
 entry:
-  %"a" = alloca [5 x i8]
-  store [5 x i8] c"\22a_\22\00", [5 x i8]* %"a"
-  %"b" = alloca [5 x i8]
-  store [5 x i8] c"\22b_\22\00", [5 x i8]* %"b"
-  %".4" = alloca [4 x i8]
-  store [4 x i8] c"%s\0a\00", [4 x i8]* %".4"
-  %".6" = bitcast [4 x i8]* %".4" to i8*
-  %".7" = call i32 (i8*, ...) @"printf"(i8* %".6", [5 x i8]* %"a")
-  %".8" = alloca [4 x i8]
-  store [4 x i8] c"%s\0a\00", [4 x i8]* %".8"
-  %".10" = bitcast [4 x i8]* %".8" to i8*
-  %".11" = call i32 (i8*, ...) @"printf"(i8* %".10", [5 x i8]* %"b")
-  %"a.1" = alloca [6 x i8]
-  store [6 x i8] c"\22dfd\22\00", [6 x i8]* %"a.1"
-  %".13" = alloca [4 x i8]
-  store [4 x i8] c"%s\0a\00", [4 x i8]* %".13"
-  %".15" = bitcast [4 x i8]* %".13" to i8*
-  %".16" = call i32 (i8*, ...) @"printf"(i8* %".15", [6 x i8]* %"a.1")
+  %".2" = alloca double
+  store double 0x3ff0000000000000, double* %".2"
+  %".4" = call double @"mean"()
+  store double %".4", double* %".2"
+  %".6" = load double, double* %".2"
+  %".7" = alloca [6 x i8]
+  store [6 x i8] c"%.3f\0a\00", [6 x i8]* %".7"
+  %".9" = bitcast [6 x i8]* %".7" to i8*
+  %".10" = call i32 (i8*, ...) @"printf"(i8* %".9", double %".6")
   ret i32 0
 }

@@ -8,10 +8,12 @@ from parser.LangParserVisitor import LangParserVisitor
 from MyErrorStrategy import MyErrorStrategy
 from MyErrorListener import MyErrorListener
 
+
 def get_username():
     from pwd import getpwuid
     from os import getuid
-    return getpwuid(getuid())[ 0 ]
+    return getpwuid(getuid())[0]
+
 
 if __name__ == '__main__':
     print(get_username())
