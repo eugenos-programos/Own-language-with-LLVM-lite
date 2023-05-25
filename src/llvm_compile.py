@@ -140,10 +140,12 @@ class ProgramCompiler:
         return variable
 
     def call_custom_func(self, name, args):
-        print(args)
         var = NumbVariable(generate_random_name, 1., self.main_builder)
         func, builder, type = self.loc_funcs.get(name)
-        self.main_builder.store(self.main_builder.call(func, args), var.ptr)
+        args = [self.main_builder.bitcast(
+            arg.ptr, self.convert_type('row')) for arg in args]
+        self.main_builder.store(self.main_builder.call(
+            func, args), var.ptr)
         return var
 
     def create_table(self, vars, n_col, n_row):
@@ -205,9 +207,9 @@ class ProgramCompiler:
         if self.local_function is not None:
             return
         type_ = self.convert_type(return_type)
-        print("type-", type(type_))
+        arg_types = [self.convert_type(arg_type) for arg_type in arg_types]
         func_type = ir.FunctionType(
-            type_, [self.convert_type(arg_type) for arg_type in arg_types])
+            type_, arg_types)
         self.local_function = ir.Function(
             self.module, func_type, name=func_name)
         self.main_builder = ir.builder.IRBuilder(
