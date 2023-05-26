@@ -1,11 +1,8 @@
 numb function mean(row row1)
 {
-    numb sum = 0;
-    for(numb I = 0;I < length(row1); ++I){
-        sum += row1[I];
-    }
-    return sum / length(row1);
+    numb sum = 13.4534;
+    return sum;
 }
 
-row row1 = create_row(3, [1, 4.5, 6]);
+row row1 = create_row(3, ["34", "45", "45"]);
 print(mean(row1));

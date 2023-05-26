@@ -1,1 +1,3 @@
-create_row(3, ["hello", "world", "!"]);
+table a = create_table(1, 2, ["df", "fdf"]);
+table b = create_table(1, 2, ["dfgfg", "dfdf"]);
+print(a * b);
