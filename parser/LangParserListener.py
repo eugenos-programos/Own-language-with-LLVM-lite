@@ -141,7 +141,7 @@ class LangParserListener(ParseTreeListener):
                     f"Function parameter {func_param} is already defined")
             self.local_func_vars[func_param] = func_params_types[func_index]
             self.addNewVariable(
-                func_param, func_params_types[func_index], self.program_compiler.local_function.args[func_index])
+                func_param, func_params_types[func_index], self.program_compiler.local_func_args[func_index])
 
         self.function_vars[func_name] = self.local_func_params = get_dict(
             func_params_types, func_type, func_params)
@@ -279,7 +279,8 @@ class LangParserListener(ParseTreeListener):
             elif isinstance(var_obj, TableVariable):
                 var_type = 'table'
             else:
-                raise TypeError("Bro here is unknown object ((((")
+                raise TypeError(
+                    "Bro here is unknown object (((( -- {} | {}".format(type(var_obj), str_id))
             return var_type, False
         elif isinstance(ctx, LangParser.BasicTypeContext) and ctx.NUMBER():
             return 'numb', False
@@ -516,7 +517,6 @@ class LangParserListener(ParseTreeListener):
             if isinstance(value, NumbVariable):
                 self.global_vars[str_name] = value
             else:
-                print("IIII")
                 self.global_vars[str_name] = NumbVariable(
                     str_name, value, self.program_compiler.main_builder)
         elif var_type == 'string':
@@ -585,7 +585,6 @@ class LangParserListener(ParseTreeListener):
                 ctx.numbExpr(1),
                 self.findExpressionOutType(ctx.numbExpr(1))
             )
-            print("||||", type(result))
             return result
 
     def findLengthStmtCtxtResult(self, ctx: LangParser.LengthStmtContext):

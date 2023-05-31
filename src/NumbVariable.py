@@ -7,6 +7,7 @@ class NumbVariable:
     type = ir.DoubleType()
 
     def __init__(self, name: str, value: float | ir.Constant, builder: ir.builder.IRBuilder) -> None:
+        value = float(value) if isinstance(value, int) else value
         if isinstance(value, float):
             self.var = ir.Constant(
                 self.type,

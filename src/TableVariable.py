@@ -6,6 +6,7 @@ from src.utils import generate_random_name
 
 class TableVariable:
     def __init__(self, name: str, elements: tuple, n_cols: int, n_rows: int | ir.Constant, builder: ir.builder.IRBuilder) -> None:
+        print("elems = ", elements)
         self.name = name
         if isinstance(elements, ir.Constant):
             self.var = elements
@@ -49,6 +50,7 @@ class TableVariable:
         for idx, row in enumerate(self.raw_var):
             els = row + other.raw_var[idx]
         print(els)
+        exit(0)
         return TableVariable(
             generate_random_name(),
             els,

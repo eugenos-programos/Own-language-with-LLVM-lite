@@ -139,14 +139,33 @@ class ProgramCompiler:
                 generate_random_name(), vars, self.main_builder)
         return variable
 
+    def create_var_by_type(self, type):
+        name = generate_random_name()
+        if type == 'numb':
+            return NumbVariable(name, 1, self.main_builder)
+        elif type == 'string':
+            return StringVariable(name, "", self.main_builder)
+        elif type == 'row':
+            return RowVariable(name, [], self.main_builder)
+        elif type == 'column':
+            return ColumnVariable(name, [], self.main_builder)
+        elif type == 'table':
+            return TableVariable(name, [], self.main_builder)
+        else:
+            raise ValueError("Unkown type - {}".format(type))
+
     def call_custom_func(self, name, args):
-        var = NumbVariable(generate_random_name, 1., self.main_builder)
-        func, builder, type = self.loc_funcs.get(name)
+        func, return_type, arg_types = self.loc_funcs.get(name)
+
+        return_var = self.create_var_by_type(return_type)
+        self.main_builder.bitcast(return_var.ptr, func.type)
+
         args = [self.main_builder.bitcast(
-            arg.ptr, self.convert_type('row')) for arg in args]
-        self.main_builder.store(self.main_builder.call(
-            func, args), var.ptr)
-        return var
+            arg.ptr, self.convert_type(arg_types[arg_idx])) for arg_idx, arg in enumerate(args)]
+
+        func_res = self.main_builder.call(func, args)
+        self.main_builder.store(func_res, return_var.ptr)
+        return return_var
 
     def create_table(self, vars, n_col, n_row):
         vars = [var + '\0' + ' ' * (MAX_STR_SIZE - 1 - len(var))
@@ -154,7 +173,7 @@ class ProgramCompiler:
         if n_col * n_row != vars:
             while len(vars) != n_col * n_row:
                 vars.append(" " * (MAX_STR_SIZE - 1) + '\0')
-        return TableVariable(generate_random_name, vars, n_col, n_row, self.main_builder)
+        return TableVariable(generate_random_name(), vars, n_col, n_row, self.main_builder)
 
     def call_reshape_func(self, arg1: TableVariable, arg2: NumbVariable, arg3: NumbVariable):
         if not isinstance(arg1, TableVariable) and not isinstance(arg2, NumbVariable) and not isinstance(arg3, NumbVariable):
@@ -185,7 +204,6 @@ class ProgramCompiler:
             self.main_func.append_basic_block(name='entry'))
 
     def end_main_func(self):
-        print("dfdf")
         if self.main_builder is not None:
             self.main_builder.ret(ir.Constant(ir.IntType(32), 0))
 
@@ -207,15 +225,18 @@ class ProgramCompiler:
         if self.local_function is not None:
             return
         type_ = self.convert_type(return_type)
-        arg_types = [self.convert_type(arg_type) for arg_type in arg_types]
+        converted_types = [self.convert_type(
+            arg_type) for arg_type in arg_types]
         func_type = ir.FunctionType(
-            type_, arg_types)
+            type_, converted_types)
         self.local_function = ir.Function(
             self.module, func_type, name=func_name)
         self.main_builder = ir.builder.IRBuilder(
             self.local_function.append_basic_block(name='entry'))
         self.loc_funcs[func_name] = (
-            self.local_function, self.main_builder, func_type)
+            self.local_function, return_type, arg_types)
+        self.local_func_args = [self.create_var_by_type(
+            arg_type) for arg_type in arg_types]
 
     def end_local_func(self, return_const: ir.Constant = None):
         print(self.main_builder)
