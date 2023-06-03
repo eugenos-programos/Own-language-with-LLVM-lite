@@ -629,7 +629,7 @@ class LangParserListener(ParseTreeListener):
                 if numbsignctxt.FULL_DIV():
                     return res1 // res2
                 if numbsignctxt.MULT():
-                    return res1 * res2
+                    return self.program_compiler.call_mult_tables(res1, res2)
     # Enter a parse tree produced by LangParser#va  rDeclStmt.
 
     def enterVarDeclStmt(self, ctx: LangParser.VarDeclStmtContext):

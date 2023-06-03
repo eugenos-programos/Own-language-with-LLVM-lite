@@ -17,6 +17,7 @@ class ProgramCompiler:
         self.module.triple = "x86_64-pc-linux-gnu"
         self.listener = listener
         self.numb_type = ir.DoubleType()
+        self.builtin_funcs = {}
         self.load_builtin_funcs()
         self.local_builders = []
         self.local_functions = []
@@ -30,6 +31,11 @@ class ProgramCompiler:
         self.__load_print_row_col_func()
         self.__load_read_str_func()
         self.__load_print_tabl_func()
+        self.__load_builtin_function(
+            ['table', 'int', 'int', 'table', 'int', 'int'],
+            'table',
+            'mul_tables'
+        )
 
     def __load_print_func(self):
         self.__print_func_arg_types = [ir.IntType(8).as_pointer()]
@@ -74,6 +80,19 @@ class ProgramCompiler:
         self.__print_table_func = ir.Function(
             self.module, print_row_col_ty, name='print_table')
 
+    def __load_builtin_function(self, args: tuple[str], return_type: str, name: str):
+        args = list(map(self.convert_type, args))
+        return_type = self.convert_type(return_type)
+        func_type = ir.FunctionType(
+            return_type,
+            args
+        )
+        func = ir.Function(self.module, func_type, name=name)
+        self.builtin_funcs[name] = [func, args, return_type]
+
+    def cast_iter_to_ptr(self, var):
+        self.main_builder.bitcast(var.ptr, self.convert_type('table'))
+
     def process_numb_expr(self, ctx: LangParser.NumbExprContext):
         first_operand = float(
             str(ctx.numbExpr(0).returnType().basicType().children[0]))
@@ -84,6 +103,29 @@ class ProgramCompiler:
             self.numb_type(second_operand)
         )
         return nexpr_res
+
+    def call_mult_tables(self, table_1, table_2):
+        if table_1.n_rows != table_2.n_rows:
+            raise ValueError("N ROWS error")
+        self.cast_iter_to_ptr(table_2)
+        args = [
+            self.main_builder.bitcast(table_1.ptr, self.convert_type('table')),
+            ir.Constant(ir.IntType(8), table_1.n_rows),
+            ir.Constant(ir.IntType(8), table_1.n_cols),
+            self.main_builder.bitcast(table_2.ptr, self.convert_type('table')),
+            ir.Constant(ir.IntType(8), table_2.n_rows),
+            ir.Constant(ir.IntType(8), table_2.n_cols)
+        ]
+        res_var = TableVariable(generate_random_name(
+        ), [' ' * MAX_STR_SIZE] * (table_1.n_cols + table_2.n_cols) * table_1.n_rows, table_1.n_cols + table_2.n_cols, table_1.n_rows, table_1.builder)
+        res = self.main_builder.call(
+            self.builtin_funcs.get("mul_tables")[0], args)
+        print(res_var.ptr)
+        self.main_builder.store(
+            res,
+            res_var.ptr
+        )
+        return res_var
 
     def call_print_func(self, variable):
         if isinstance(variable, NumbVariable):
@@ -213,13 +255,17 @@ class ProgramCompiler:
         elif str_type == 'string':
             return ir.IntType(8).as_pointer()
         elif str_type == 'row':
-            return ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()
+            return ir.IntType(8).as_pointer().as_pointer()
         elif str_type == 'table':
-            return ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()
+            return ir.IntType(8).as_pointer().as_pointer()
         elif str_type == 'column':
-            return ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()
+            return ir.IntType(8).as_pointer().as_pointer()
         elif str_type == 'void':
             return ir.DoubleType()
+        elif str_type == 'int':
+            return ir.IntType(8)
+        else:
+            raise ValueError("Unknown type")
 
     def start_local_func(self, func_name, return_type, arg_types):
         if self.local_function is not None:
