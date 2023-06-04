@@ -36,11 +36,6 @@ class ProgramCompiler:
             'iter',
             'mul_tables'
         )
-        self.__load_builtin_function(
-            ['iter_raw'],
-            'iter',
-            'create_iter'
-        )
 
     def __load_print_func(self):
         self.__print_func_arg_types = [ir.IntType(8).as_pointer()]
@@ -114,23 +109,22 @@ class ProgramCompiler:
             raise ValueError("N ROWS error")
         self.cast_iter_to_ptr(table_2)
         args = [
-            self.main_builder.bitcast(table_1.ptr, self.convert_type('table')),
+            table_1.ptr,
             ir.Constant(ir.IntType(8), table_1.n_rows),
             ir.Constant(ir.IntType(8), table_1.n_cols),
-            self.main_builder.bitcast(table_2.ptr, self.convert_type('table')),
+            table_2.ptr,
             ir.Constant(ir.IntType(8), table_2.n_rows),
             ir.Constant(ir.IntType(8), table_2.n_cols)
         ]
-        res_var = TableVariable([' ' * MAX_STR_SIZE] * (table_1.n_cols + table_2.n_cols) *
-                                table_1.n_rows, table_1.n_cols + table_2.n_cols, table_1.n_rows, table_1.builder)
-        res = self.main_builder.call(
-            self.builtin_funcs.get("mul_tables")[0], args)
-        print(res_var.ptr)
+        func, return_type, args_types = self.builtin_funcs.get("mul_tables")
+
+        ptr_res = self.main_builder.alloca(return_type)
+        res = self.main_builder.call(func, args)
         self.main_builder.store(
             res,
-            res_var.ptr
+            ptr_res
         )
-        return res_var
+        return TableVariable(n_cols=table_1.n_cols + table_2.n_cols, n_rows=table_1.n_rows, builder=self.main_builder, ptr=ptr_res)
 
     def call_print_func(self, variable):
         if isinstance(variable, NumbVariable):

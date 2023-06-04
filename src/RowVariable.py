@@ -3,8 +3,8 @@ from src.IterVariable import IterVariable
 
 
 class RowVariable(IterVariable):
-    def __init__(self, elements: tuple, builder: ir.builder.IRBuilder) -> None:
-        super().__init__(elements, len(elements), builder)
+    def __init__(self, elements: tuple = None, builder: ir.builder.IRBuilder = None, ptr=None) -> None:
+        super().__init__(elements, len(elements), builder, ptr)
 
     def set_value(self, value):
         self.size = value.size

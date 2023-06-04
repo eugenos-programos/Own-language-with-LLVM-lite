@@ -102,13 +102,3 @@ const char **mul_tables(const char **first_table, int n_rows_first, int n_column
     }
     return res_table;
 }
-
-const char **create_iter(char *arr[], int size)
-{
-    const char **res = malloc(size);
-    for (int i = 0; i < size; ++i)
-    {
-        res[i] = arr[i];
-    }
-    return res;
-}

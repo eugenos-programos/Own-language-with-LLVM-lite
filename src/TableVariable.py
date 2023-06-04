@@ -5,8 +5,8 @@ from src.IterVariable import IterVariable
 
 class TableVariable(IterVariable):
 
-    def __init__(self, elements: tuple, n_cols: int, n_rows: int, builder: ir.builder.IRBuilder) -> None:
-        super().__init__(elements, n_cols * n_rows, builder)
+    def __init__(self, elements: tuple = None, n_cols: int = None, n_rows: int = None, builder: ir.builder.IRBuilder = None, ptr=None) -> None:
+        super().__init__(elements, n_cols * n_rows, builder, ptr)
 
         self.n_rows = n_rows
         self.n_cols = n_cols
