@@ -6,26 +6,32 @@ class StringVariable:
 
     type = ir.ArrayType(ir.IntType(8), MAX_STR_SIZE)
 
-    def __init__(self, name:str, value:str, builder:ir.builder.IRBuilder) -> None:
-        self.name = name
+    def __init__(self, value: str, builder: ir.builder.IRBuilder) -> None:
         if len(value) != MAX_STR_SIZE - 1:
             raise ValueError("Incorrect string - {}".format(value))
         value += '\0'
-        self.var = ir.Constant(
-            self.type,
-            bytearray(value.encode("utf8"))
-        )
+
         self.builder = builder
-        self.compile_str_init()
+
+        self.var = ir.Constant(ir.ArrayType(ir.IntType(8), MAX_STR_SIZE), bytearray(
+            value, 'utf-8'))
+        self.type = ir.PointerType(ir.IntType(8))
+
+        self.ptr = self.builder.alloca(
+            ir.ArrayType(ir.IntType(8), MAX_STR_SIZE))
+        self.builder.store(self.var, self.ptr)
+        self.builder.bitcast(self.ptr, self.type)
+
+        self.size = len(value)
 
     def compile_str_init(self):
-        self.ptr = self.builder.alloca(self.type, name=self.name)
+        self.ptr = self.builder.alloca(self.type)
         self.builder.store(self.var, self.ptr)
 
     def get_value(self):
         return self.ptr
-    
-    def set_value(self, value:str):
+
+    def set_value(self, value: str):
         value += '\0'
         self.type = ir.ArrayType(ir.IntType(8), len(value))
         self.var = ir.Constant(
@@ -33,4 +39,3 @@ class StringVariable:
             bytearray(value.encode("utf8"))
         )
         self.compile_str_init()
-    

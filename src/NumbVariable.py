@@ -1,12 +1,11 @@
 from typing import Any
 from llvmlite import ir
-from src.utils import generate_random_name
 
 
 class NumbVariable:
     type = ir.DoubleType()
 
-    def __init__(self, name: str, value: float | ir.Constant, builder: ir.builder.IRBuilder) -> None:
+    def __init__(self, value: float | ir.Constant, builder: ir.builder.IRBuilder) -> None:
         value = float(value) if isinstance(value, int) else value
         if isinstance(value, float):
             self.var = ir.Constant(
@@ -17,7 +16,6 @@ class NumbVariable:
         else:
             self.var = value
             self.raw_var = value.constant
-        self.name = name
         self.builder = builder
         self.compile_numb_init()
 
@@ -45,7 +43,6 @@ class NumbVariable:
 
     def __eq__(self, other):
         return NumbVariable(
-            generate_random_name(),
             ir.Constant(
                 self.type,
                 self.raw_var == other.raw_var
@@ -55,7 +52,6 @@ class NumbVariable:
 
     def __ne__(self, other):
         return NumbVariable(
-            generate_random_name(),
             ir.Constant(
                 self.type,
                 self.raw_var != other.raw_var
@@ -65,7 +61,6 @@ class NumbVariable:
 
     def __sub__(self, other_var):
         return NumbVariable(
-            generate_random_name(),
             self.builder.fsub(
                 self.get_value(),
                 other_var.get_value()
@@ -75,7 +70,6 @@ class NumbVariable:
 
     def __truediv__(self, other_var):
         return NumbVariable(
-            generate_random_name(),
             self.builder.fdiv(
                 self.get_value(),
                 other_var.get_value()
@@ -87,7 +81,6 @@ class NumbVariable:
         var1 = self.get_value(),
         var2 = other_var.get_value()
         return NumbVariable(
-            generate_random_name(),
             self.builder.fsub(
                 self.builder.fdiv(var1.get_value(), var2),
                 self.builder.frem(var1, var2)
@@ -97,7 +90,6 @@ class NumbVariable:
 
     def __mul__(self, other_var):
         return NumbVariable(
-            generate_random_name(),
             self.builder.fmul(
                 self.get_value(),
                 other_var.get_value()

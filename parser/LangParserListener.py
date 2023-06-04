@@ -536,7 +536,7 @@ class LangParserListener(ParseTreeListener):
                     return self.global_vars.get(str(expr.basicType().ID()))
                 elif expr.basicType().NUMBER():
                     value = float(str(expr.basicType().NUMBER()))
-                    return NumbVariable(generate_random_name(), value, self.program_compiler.main_builder)
+                    return NumbVariable(value, self.program_compiler.main_builder)
                 elif expr.basicType().STRING():
                     value = str(expr.basicType().STRING())
                     return value
@@ -594,7 +594,7 @@ class LangParserListener(ParseTreeListener):
                                result.n_cols * result.n_rows)
         else:
             cvar = ir.Constant(NumbVariable.type, result.size)
-        return NumbVariable(generate_random_name(), cvar, self.program_compiler.main_builder)
+        return NumbVariable(cvar, self.program_compiler.main_builder)
 
     def findreshapeStmtCtxtRes(self, ctx: LangParser.ReshapeStmtContext):
         arg1 = self.findNumbExprResult(ctx.numbExpr(0))

@@ -3,11 +3,11 @@ from parser.LangParser import LangParser
 from src.ColumnVariable import ColumnVariable
 from src.NumbVariable import NumbVariable
 from src.StringVariable import StringVariable
-from src.RowVariable import RowVariable, MAX_STR_SIZE
+from src.RowVariable import RowVariable
 from src.TableVariable import TableVariable
+from src.configs import MAX_STR_SIZE
 import time
 import os
-from src.utils import generate_random_name
 
 
 class ProgramCompiler:
@@ -18,12 +18,12 @@ class ProgramCompiler:
         self.listener = listener
         self.numb_type = ir.DoubleType()
         self.builtin_funcs = {}
+
         self.load_builtin_funcs()
         self.local_builders = []
-        self.local_functions = []
-        self.loc_funcs = {}
         self.local_function = None
         self.main_func = None
+        TableVariable.builtin_functions = self.builtin_funcs
 
     def load_builtin_funcs(self):
         self.__load_print_func()
@@ -32,9 +32,14 @@ class ProgramCompiler:
         self.__load_read_str_func()
         self.__load_print_tabl_func()
         self.__load_builtin_function(
-            ['table', 'int', 'int', 'table', 'int', 'int'],
-            'table',
+            ['iter', 'int', 'int', 'iter', 'int', 'int'],
+            'iter',
             'mul_tables'
+        )
+        self.__load_builtin_function(
+            ['iter_raw'],
+            'iter',
+            'create_iter'
         )
 
     def __load_print_func(self):
@@ -88,7 +93,7 @@ class ProgramCompiler:
             args
         )
         func = ir.Function(self.module, func_type, name=name)
-        self.builtin_funcs[name] = [func, args, return_type]
+        self.builtin_funcs[name] = [func, return_type, args]
 
     def cast_iter_to_ptr(self, var):
         self.main_builder.bitcast(var.ptr, self.convert_type('table'))
@@ -116,8 +121,8 @@ class ProgramCompiler:
             ir.Constant(ir.IntType(8), table_2.n_rows),
             ir.Constant(ir.IntType(8), table_2.n_cols)
         ]
-        res_var = TableVariable(generate_random_name(
-        ), [' ' * MAX_STR_SIZE] * (table_1.n_cols + table_2.n_cols) * table_1.n_rows, table_1.n_cols + table_2.n_cols, table_1.n_rows, table_1.builder)
+        res_var = TableVariable([' ' * MAX_STR_SIZE] * (table_1.n_cols + table_2.n_cols) *
+                                table_1.n_rows, table_1.n_cols + table_2.n_cols, table_1.n_rows, table_1.builder)
         res = self.main_builder.call(
             self.builtin_funcs.get("mul_tables")[0], args)
         print(res_var.ptr)
@@ -174,30 +179,27 @@ class ProgramCompiler:
         vars = [var + '\0' + ' ' * (MAX_STR_SIZE - 1 - len(var))
                 for var in vars]
         if is_col:
-            variable = ColumnVariable(
-                generate_random_name(), vars, self.main_builder)
+            variable = ColumnVariable(vars, self.main_builder)
         else:
-            variable = RowVariable(
-                generate_random_name(), vars, self.main_builder)
+            variable = RowVariable(vars, self.main_builder)
         return variable
 
     def create_var_by_type(self, type):
-        name = generate_random_name()
         if type == 'numb':
-            return NumbVariable(name, 1, self.main_builder)
+            return NumbVariable(1, self.main_builder)
         elif type == 'string':
-            return StringVariable(name, "", self.main_builder)
+            return StringVariable("", self.main_builder)
         elif type == 'row':
-            return RowVariable(name, [], self.main_builder)
+            return RowVariable([], self.main_builder)
         elif type == 'column':
-            return ColumnVariable(name, [], self.main_builder)
+            return ColumnVariable([], self.main_builder)
         elif type == 'table':
-            return TableVariable(name, [], self.main_builder)
+            return TableVariable([], self.main_builder)
         else:
             raise ValueError("Unkown type - {}".format(type))
 
     def call_custom_func(self, name, args):
-        func, return_type, arg_types = self.loc_funcs.get(name)
+        func, return_type, arg_types = self.builtin_funcs.get(name)
 
         return_var = self.create_var_by_type(return_type)
         self.main_builder.bitcast(return_var.ptr, func.type)
@@ -215,13 +217,13 @@ class ProgramCompiler:
         if n_col * n_row != vars:
             while len(vars) != n_col * n_row:
                 vars.append(" " * (MAX_STR_SIZE - 1) + '\0')
-        return TableVariable(generate_random_name(), vars, n_col, n_row, self.main_builder)
+        return TableVariable(vars, n_col, n_row, self.main_builder)
 
     def call_reshape_func(self, arg1: TableVariable, arg2: NumbVariable, arg3: NumbVariable):
         if not isinstance(arg1, TableVariable) and not isinstance(arg2, NumbVariable) and not isinstance(arg3, NumbVariable):
             raise ValueError(
                 "Invalid arg types combination - {}, {}, {}".format(type(arg1), type(arg2), type(arg3)))
-        return TableVariable(generate_random_name(), arg1.var, arg2, arg3, self.main_builder)
+        return TableVariable(arg1.var, arg2, arg3, self.main_builder)
 
     def compile_program(self, file_name='ir_program.ll'):
         self.end_main_func()
@@ -254,18 +256,16 @@ class ProgramCompiler:
             return ir.DoubleType()
         elif str_type == 'string':
             return ir.IntType(8).as_pointer()
-        elif str_type == 'row':
-            return ir.IntType(8).as_pointer().as_pointer()
-        elif str_type == 'table':
-            return ir.IntType(8).as_pointer().as_pointer()
-        elif str_type == 'column':
+        elif str_type in ['iter', 'row', 'table', 'column']:
             return ir.IntType(8).as_pointer().as_pointer()
         elif str_type == 'void':
             return ir.DoubleType()
         elif str_type == 'int':
             return ir.IntType(8)
+        elif str_type == 'iter_raw':
+            return ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()
         else:
-            raise ValueError("Unknown type")
+            raise ValueError("Unknown type - {}".format(str_type))
 
     def start_local_func(self, func_name, return_type, arg_types):
         if self.local_function is not None:
@@ -279,7 +279,7 @@ class ProgramCompiler:
             self.module, func_type, name=func_name)
         self.main_builder = ir.builder.IRBuilder(
             self.local_function.append_basic_block(name='entry'))
-        self.loc_funcs[func_name] = (
+        self.builtin_funcs[func_name] = (
             self.local_function, return_type, arg_types)
         self.local_func_args = [self.create_var_by_type(
             arg_type) for arg_type in arg_types]
@@ -309,7 +309,7 @@ class ProgramCompiler:
         return var
 
     def read_string(self) -> StringVariable:
-        var = StringVariable(generate_random_name(), ' ' *
+        var = StringVariable(' ' *
                              (MAX_STR_SIZE - 1), self.main_builder)
         self.main_builder.store(self.main_builder.call(
             self.__read_str_func, []), var.ptr)
