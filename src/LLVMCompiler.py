@@ -6,13 +6,15 @@ from src.StringVariable import StringVariable
 from src.RowVariable import RowVariable
 from src.TableVariable import TableVariable
 from src.FunctionCompiler import FunctionCompiler
+from src.ExpressionCompiler import ExpressionCompiler
 from src.configs import MAX_STR_SIZE
+from src.basic_types import *
 import time
 import os
 
 
 class LLVMCompiler:
-    def __init__(self, function_compiler: FunctionCompiler) -> None:
+    def __init__(self, function_compiler: FunctionCompiler, expr_compiler: ExpressionCompiler) -> None:
         print("Program compilation into IR code is starting...")
         self._module = ir.Module()
         self._module.triple = "x86_64-pc-linux-gnu"
@@ -98,6 +100,20 @@ class LLVMCompiler:
             return TableVariable([], self._builder)
         else:
             raise ValueError("Unkown type - {}".format(type))
-
-    
-
+        
+    def convert_type(self, type: str) -> ir.Type:
+        result_type = None
+        match type:
+            case "numb":
+                result_type = number
+            case "string":
+                result_type = string
+            case "iter"|"row"|"table"|"column":
+                result_type = iter
+            case "void":
+                result_type = number
+            case "int":
+                result_type = i8
+            case _:
+                raise ValueError("Unknown type - {}".format(type))
+        return result_type

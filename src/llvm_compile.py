@@ -25,17 +25,6 @@ class ProgramCompiler:
         self.main_func = None
         TableVariable.builtin_functions = self.builtin_funcs
 
-    def process_numb_expr(self, ctx: LangParser.NumbExprContext):
-        first_operand = float(
-            str(ctx.numbExpr(0).returnType().basicType().children[0]))
-        second_operand = float(
-            str(ctx.numbExpr(1).returnType().basicType().children[0]))
-        nexpr_res = self.main_builder.fadd(
-            self.numb_type(first_operand),
-            self.numb_type(second_operand)
-        )
-        return nexpr_res
-
     def call_mult_tables(self, table_1, table_2):
         if table_1.n_rows != table_2.n_rows:
             raise ValueError("N ROWS error")
@@ -136,23 +125,6 @@ class ProgramCompiler:
             raise ValueError(
                 "Invalid arg types combination - {}, {}, {}".format(type(arg1), type(arg2), type(arg3)))
         return TableVariable(arg1.var, arg2, arg3, self.main_builder)
-
-
-    def convert_type(self, str_type):
-        if str_type == 'numb':
-            return ir.DoubleType()
-        elif str_type == 'string':
-            return ir.IntType(8).as_pointer()
-        elif str_type in ['iter', 'row', 'table', 'column']:
-            return ir.IntType(8).as_pointer().as_pointer()
-        elif str_type == 'void':
-            return ir.DoubleType()
-        elif str_type == 'int':
-            return ir.IntType(8)
-        elif str_type == 'iter_raw':
-            return ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()
-        else:
-            raise ValueError("Unknown type - {}".format(str_type))
 
 
     def read_string(self) -> StringVariable:

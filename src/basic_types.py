@@ -7,6 +7,6 @@ i32 = ir.IntType(32)
 array = ir.ArrayType
 void = ir.VoidType()
 
-string = ir.ArrayType(i8, MAX_STR_SIZE)
-iter = ir.ArrayType(i8, MAX_STR_SIZE).as_pointer()
+string = i8.as_pointer()
+iter = i8.as_pointer().as_pointer()
 number = ir.DoubleType()
