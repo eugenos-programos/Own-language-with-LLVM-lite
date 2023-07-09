@@ -15,7 +15,10 @@ class FunctionCompiler:
         function_parameters = [
             [i32, [i8.as_pointer()], "printf", True],
             [i32, [], "length", False],
-            [void, [array(i8, MAX_STR_SIZE).as_pointer(), i32, i32], "print_row_or_column", ]
+            [void, [iter, i32, i32], "print_row_or_column", False],
+            [string, [], "read_string", False],
+            [void, [iter, i32, i32], "print_table", False],
+            [iter, [iter, i32, i32, iter, i32, i32], "mul_tables", False]
         ]
         for func_params in function_parameters:
             self._save_func_to_dict(*func_params)
@@ -30,4 +33,9 @@ class FunctionCompiler:
             name
         )
         self._functions[name] = function
+
+    def call_function(self, func_name: str, args: list):
+        pass
+
+    
 

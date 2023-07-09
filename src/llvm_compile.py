@@ -12,7 +12,7 @@ import os
 
 class ProgramCompiler:
     def __init__(self, listener) -> None:
-        print("Program translation into IR code was started...")
+        print("Program translation into IR code started...")
         self.module = ir.Module()
         self.module.triple = "x86_64-pc-linux-gnu"
         self.listener = listener
@@ -24,74 +24,6 @@ class ProgramCompiler:
         self.local_function = None
         self.main_func = None
         TableVariable.builtin_functions = self.builtin_funcs
-
-    def load_builtin_funcs(self):
-        self.__load_print_func()
-        self.__load_length_func()
-        self.__load_print_row_col_func()
-        self.__load_read_str_func()
-        self.__load_print_tabl_func()
-        self.__load_builtin_function(
-            ['iter', 'int', 'int', 'iter', 'int', 'int'],
-            'iter',
-            'mul_tables'
-        )
-
-    def __load_print_func(self):
-        self.__print_func_arg_types = [ir.IntType(8).as_pointer()]
-        printf_ty = ir.FunctionType(ir.IntType(
-            32), self.__print_func_arg_types, var_arg=True)
-        self.__print_func = ir.Function(self.module, printf_ty, name="printf")
-
-    def __load_length_func(self):
-        self.__length_func_arg_types = []
-        leng_ty = ir.FunctionType(ir.IntType(32), self.__length_func_arg_types)
-        self.__length_func = ir.Function(self.module, leng_ty, name='length')
-
-    def __load_print_row_col_func(self):
-        self.__print_row_col_arg_types = [ir.ArrayType(ir.IntType(
-            8), MAX_STR_SIZE).as_pointer(), ir.IntType(32), ir.IntType(32)]
-        print_row_col_ty = ir.FunctionType(
-            ir.VoidType(),
-            self.__print_row_col_arg_types
-        )
-        self.__print_row_col_func = ir.Function(
-            self.module, print_row_col_ty, name='print_row_or_column')
-
-    def __load_read_str_func(self):
-        self.__read_str_arg_types = []
-        read_str_ty = ir.FunctionType(
-            StringVariable.type,
-            self.__read_str_arg_types
-        )
-        self.__read_str_func = ir.Function(
-            self.module, read_str_ty, name='read_string')
-
-    def __load_print_tabl_func(self):
-        self.__print_tabl_arg_types = [
-            ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer(),
-            ir.IntType(32),
-            ir.IntType(32)
-        ]
-        print_row_col_ty = ir.FunctionType(
-            ir.VoidType(),
-            self.__print_row_col_arg_types
-        )
-        self.__print_table_func = ir.Function(
-            self.module, print_row_col_ty, name='print_table')
-
-    def __load_builtin_function(self, args: tuple[str], return_type: str, name: str):
-        args = list(map(self.convert_type, args))
-        return_type = self.convert_type(return_type)
-        func_type = ir.FunctionType(
-            return_type,
-            args
-        )
-        func = ir.Function(self.module, func_type, name=name)
-        self.builtin_funcs[name] = [func, return_type, args]
-
-    def cast_iter_to_ptr(self, var):
-        self.main_builder.bitcast(var.ptr, self.convert_type('table'))
 
     def process_numb_expr(self, ctx: LangParser.NumbExprContext):
         first_operand = float(
@@ -178,20 +110,6 @@ class ProgramCompiler:
             variable = RowVariable(vars, self.main_builder)
         return variable
 
-    def create_var_by_type(self, type):
-        if type == 'numb':
-            return NumbVariable(1, self.main_builder)
-        elif type == 'string':
-            return StringVariable("", self.main_builder)
-        elif type == 'row':
-            return RowVariable([], self.main_builder)
-        elif type == 'column':
-            return ColumnVariable([], self.main_builder)
-        elif type == 'table':
-            return TableVariable([], self.main_builder)
-        else:
-            raise ValueError("Unkown type - {}".format(type))
-
     def call_custom_func(self, name, args):
         func, return_type, arg_types = self.builtin_funcs.get(name)
 
@@ -219,31 +137,6 @@ class ProgramCompiler:
                 "Invalid arg types combination - {}, {}, {}".format(type(arg1), type(arg2), type(arg3)))
         return TableVariable(arg1.var, arg2, arg3, self.main_builder)
 
-    def compile_program(self, file_name='ir_program.ll'):
-        self.end_main_func()
-        print(str(self.module))
-        with open(file_name, "w") as ir_file:
-            ir_file.write(str(self.module))
-        print(
-            "Program translation into IR code is finished. IR file - {}".format(file_name))
-        time.sleep(1)
-        print("Program is converting from IR into executable file")
-        os.system(f"llvm-as {file_name} -o mylang.bc")
-        os.system(f"clang -c -emit-llvm src/main.c -o main.bc")
-        os.system(f"clang -c -emit-llvm src/func_utilities.c -o func_utilities.bc")
-        os.system(f"clang mylang.bc main.bc func_utilities.bc -o executable")
-        os.system(f"rm main.bc mylang.bc func_utilities.bc")
-
-    def start_main_func(self):
-        main_type = ir.FunctionType(ir.IntType(32), [])
-        self.main_func = ir.Function(
-            self.module, main_type, name='run_llvmlite_compiler')
-        self.main_builder = ir.IRBuilder(
-            self.main_func.append_basic_block(name='entry'))
-
-    def end_main_func(self):
-        if self.main_builder is not None:
-            self.main_builder.ret(ir.Constant(ir.IntType(32), 0))
 
     def convert_type(self, str_type):
         if str_type == 'numb':
@@ -261,46 +154,6 @@ class ProgramCompiler:
         else:
             raise ValueError("Unknown type - {}".format(str_type))
 
-    def start_local_func(self, func_name, return_type, arg_types):
-        if self.local_function is not None:
-            return
-        type_ = self.convert_type(return_type)
-        converted_types = [self.convert_type(
-            arg_type) for arg_type in arg_types]
-        func_type = ir.FunctionType(
-            type_, converted_types)
-        self.local_function = ir.Function(
-            self.module, func_type, name=func_name)
-        self.main_builder = ir.builder.IRBuilder(
-            self.local_function.append_basic_block(name='entry'))
-        self.builtin_funcs[func_name] = (
-            self.local_function, return_type, arg_types)
-        self.local_func_args = [self.create_var_by_type(
-            arg_type) for arg_type in arg_types]
-
-    def end_local_func(self, return_const: ir.Constant = None):
-        print(self.main_builder)
-        print(self.local_function)
-        if return_const is None:
-            self.main_builder.ret(ir.Constant(ir.DoubleType(), 0.0))
-        else:
-            self.main_builder.ret(return_const.var)
-        self.local_function = None
-        self.main_builder = None
-
-    def incr_var(self, var: NumbVariable):
-        temp_val = self.main_builder.load(var.ptr)
-        new_val = self.main_builder.fadd(
-            temp_val, ir.Constant(ir.DoubleType(), 1.))
-        self.main_builder.store(new_val, var.ptr)
-        return var
-
-    def decr_var(self, var: NumbVariable):
-        temp_val = self.main_builder.load(var.ptr)
-        new_val = self.main_builder.fsub(
-            temp_val, ir.Constant(ir.DoubleType(), 1.))
-        self.main_builder.store(new_val, var.ptr)
-        return var
 
     def read_string(self) -> StringVariable:
         var = StringVariable(' ' *
@@ -309,6 +162,3 @@ class ProgramCompiler:
             self.__read_str_func, []), var.ptr)
         return var
 
-    def del_el(self, obj_: RowVariable | ColumnVariable, el: str):
-        if isinstance(el, int):
-            el = str(el)
