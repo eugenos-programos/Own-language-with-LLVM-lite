@@ -24,10 +24,6 @@ class StringVariable:
 
         self.size = len(value)
 
-    def compile_str_init(self):
-        self.ptr = self.builder.alloca(self.type)
-        self.builder.store(self.var, self.ptr)
-
     def get_value(self):
         return self.ptr
 

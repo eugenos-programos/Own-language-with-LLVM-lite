@@ -21,6 +21,5 @@ class IterVariable:
             self.ptr = self.builder.bitcast(self.ptr, ir.PointerType(
                 ir.PointerType(ir.IntType(8))))
 
-    def compile_init(self):
-        self.ptr = self.builder.alloca(self.type)
-        self.builder.store(self.var, self.ptr)
+    def get_value(self):
+        return self.ptr
