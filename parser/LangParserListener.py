@@ -543,7 +543,7 @@ class LangParserListener(ParseTreeListener):
                     value = float(str(expr.basicType().NUMBER()))
                     return NumbVariable(value, self.program_compiler.main_builder)
                 elif expr.basicType().STRING():
-                    value = str(expr.basicType().STRING())
+                    value = StringVariable(str(expr.basicType().STRING()), self.program_compiler._builder)
                     return value
             elif expr.builtinFuncStmt():
                 func_expr: LangParser.BuiltinFuncStmtContext = expr.builtinFuncStmt()
@@ -997,8 +997,8 @@ class LangParserListener(ParseTreeListener):
     # Exit a parse tree produced by LangParser#printStmt.
     def exitPrintStmt(self, ctx: LangParser.PrintStmtContext):
         self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.PRINT()))
-        self.program_compiler.call_function(ctx.PRINT(),
-            self.findNumbExprResult(ctx.numbExpr(0)))
+        self.program_compiler.call_function(str(ctx.PRINT()),
+            [self.findNumbExprResult(ctx.numbExpr(0))])
 
     # Enter a parse tree produced by LangParser#readStrStmt.
     def enterReadStrStmt(self, ctx: LangParser.ReadStrStmtContext):

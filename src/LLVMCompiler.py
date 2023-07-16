@@ -89,7 +89,7 @@ class LLVMCompiler:
         return nexpr_res
     
     def call_function(self, name: str, args: list):
-        self.function_compiler.call_function(name, args)
+        return self.function_compiler.call_function(name, args, self._builder)
 
     def create_empty_var_by_type(self, type: ir.Type):
         if type == 'numb':

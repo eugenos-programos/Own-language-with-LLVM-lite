@@ -5,8 +5,7 @@ from llvmlite import ir
 class Function:
     def __init__(self, module: ir.Module, function_type: ir.FunctionType, name: str) -> None:
         self.arg_types = function_type.args
-        self.return_type = function_type.type
-        print(self.arg_types)
+        self.return_type = function_type.return_type
         self._function = ir.Function(
             module, 
             function_type,

@@ -8,7 +8,7 @@ class StringVariable:
 
     def __init__(self, value: str, builder: ir.builder.IRBuilder) -> None:
         if len(value) != MAX_STR_SIZE - 1:
-            raise ValueError("Incorrect string - {}".format(value))
+            value += " " * (MAX_STR_SIZE - 1 - len(value))
         value += '\0'
 
         self.builder = builder
@@ -20,7 +20,7 @@ class StringVariable:
         self.ptr = self.builder.alloca(
             ir.ArrayType(ir.IntType(8), MAX_STR_SIZE))
         self.builder.store(self.var, self.ptr)
-        self.builder.bitcast(self.ptr, self.type)
+        self.ptr = self.builder.bitcast(self.ptr, self.type)
 
         self.size = len(value)
 
