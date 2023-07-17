@@ -5,11 +5,7 @@ if __name__ is not None and "." in __name__:
 else:
     from LangParser import LangParser
 from src.LLVMCompiler import LLVMCompiler
-from src.NumbVariable import NumbVariable
-from src.StringVariable import StringVariable
-from src.ColumnVariable import ColumnVariable
-from src.RowVariable import RowVariable
-from src.TableVariable import TableVariable
+from src.variables import *
 
 
 class SemanticAnalyzerException(Exception):
