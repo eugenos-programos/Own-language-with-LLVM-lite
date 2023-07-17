@@ -4,7 +4,8 @@ if __name__ is not None and "." in __name__:
     from .LangParser import LangParser
 else:
     from LangParser import LangParser
-from src.llvm_compile import *
+from src.LLVMCompiler import LLVMCompiler
+from src.variables import *
 
 
 class SemanticAnalyzerException(Exception):
@@ -81,13 +82,13 @@ class LangParserListener(ParseTreeListener):
         self.local_ifels_vars = {}
 
         # init program compiler
-        self.program_compiler = ProgramCompiler(self)
+        self.program_compiler = LLVMCompiler()
 
     # Exit a parse tree produced by LangParser#program.
     def exitProgram(self, ctx: LangParser.ProgramContext):
         # print(self.function_vars)
         # print(self.global_vars)
-        self.program_compiler.compile_program()
+        self.program_compiler.finish_compiling()
 
     # Enter a parse tree produced by LangParser#func.
     def enterFunc(self, ctx: LangParser.FuncContext):
@@ -149,7 +150,7 @@ class LangParserListener(ParseTreeListener):
 
     # Enter a parse tree produced by LangParser#stat.
     def enterStat(self, ctx: LangParser.StatContext):
-        if self.program_compiler.local_function is None and self.program_compiler.main_func is None:
+        if self.program_compiler.local_function is None and not self.program_compiler.is_main_function_started():
             self.program_compiler.start_main_func()
         self.main_func_started = True
 
@@ -538,7 +539,7 @@ class LangParserListener(ParseTreeListener):
                     value = float(str(expr.basicType().NUMBER()))
                     return NumbVariable(value, self.program_compiler.main_builder)
                 elif expr.basicType().STRING():
-                    value = str(expr.basicType().STRING())
+                    value = StringVariable(str(expr.basicType().STRING()), self.program_compiler._builder)
                     return value
             elif expr.builtinFuncStmt():
                 func_expr: LangParser.BuiltinFuncStmtContext = expr.builtinFuncStmt()
@@ -629,7 +630,7 @@ class LangParserListener(ParseTreeListener):
                 if numbsignctxt.FULL_DIV():
                     return res1 // res2
                 if numbsignctxt.MULT():
-                    return self.program_compiler.call_mult_tables(res1, res2)
+                    return self.program_compiler.function_compiler.call_mult_tables_function(res1, res2, self.program_compiler._builder)
     # Enter a parse tree produced by LangParser#va  rDeclStmt.
 
     def enterVarDeclStmt(self, ctx: LangParser.VarDeclStmtContext):
@@ -992,8 +993,8 @@ class LangParserListener(ParseTreeListener):
     # Exit a parse tree produced by LangParser#printStmt.
     def exitPrintStmt(self, ctx: LangParser.PrintStmtContext):
         self.checkNumbExprCorrectInFunctionCall(ctx, str(ctx.PRINT()))
-        self.program_compiler.call_print_func(
-            self.findNumbExprResult(ctx.numbExpr(0)))
+        self.program_compiler.call_function(str(ctx.PRINT()),
+            [self.findNumbExprResult(ctx.numbExpr(0))])
 
     # Enter a parse tree produced by LangParser#readStrStmt.
     def enterReadStrStmt(self, ctx: LangParser.ReadStrStmtContext):

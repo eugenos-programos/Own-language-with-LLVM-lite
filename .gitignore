@@ -4,4 +4,5 @@ __pycache__/
 executable
 *.bc
 *.ll
+*.txt
 examples/

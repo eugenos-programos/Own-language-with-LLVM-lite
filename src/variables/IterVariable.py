@@ -1,8 +1,12 @@
 from llvmlite import ir
 from src.configs import MAX_STR_SIZE
+from ..basic_types import iter
 
 
 class IterVariable:
+
+    basic_type = iter
+
     def __init__(self, elements: tuple = None, size: int = None, builder: ir.builder.IRBuilder = None, ptr=None) -> None:
         self.builder = builder
         self.size = size

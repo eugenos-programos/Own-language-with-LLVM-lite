@@ -1,4 +1,4 @@
-from src.NumbVariable import NumbVariable
+from src.variables import NumbVariable
 from llvmlite import ir
 from parser.LangParser import LangParser
 

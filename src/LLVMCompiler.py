@@ -1,10 +1,6 @@
 import llvmlite.ir as ir
 from parser.LangParser import LangParser
-from src.ColumnVariable import ColumnVariable
-from src.NumbVariable import NumbVariable
-from src.StringVariable import StringVariable
-from src.RowVariable import RowVariable
-from src.TableVariable import TableVariable
+from src.variables import *
 from src.FunctionCompiler import FunctionCompiler
 from src.ExpressionCompiler import ExpressionCompiler
 from src.configs import MAX_STR_SIZE
@@ -14,14 +10,15 @@ import os
 
 
 class LLVMCompiler:
-    def __init__(self, function_compiler: FunctionCompiler, expr_compiler: ExpressionCompiler) -> None:
+    def __init__(self) -> None:
         print("Program compilation into IR code is starting...")
         self._module = ir.Module()
         self._module.triple = "x86_64-pc-linux-gnu"
         self._builtin_funcs = {}
-        self.function_compiler = function_compiler
-
-        self._load_builtin_funcs()
+        self.function_compiler = FunctionCompiler(self._module)
+        self.expression_compiler = ExpressionCompiler()
+        self.local_function = None
+        self._main_func = None
 
     def finish_compiling(self, file_name='ir_program.ll'):
         self.finish_main_func()
@@ -40,9 +37,12 @@ class LLVMCompiler:
     def start_main_func(self):
         main_type = ir.FunctionType(ir.IntType(32), [])
         self._main_func = ir.Function(
-            self.module, main_type, name='run_llvmlite_compiler')
+            self._module, main_type, name='run_llvmlite_compiler')
         self._builder = ir.IRBuilder(
             self._main_func.append_basic_block(name='entry'))
+    
+    def is_main_function_started(self):
+        return self._main_func is not None
 
     def finish_main_func(self):
         if self._builder is not None:
@@ -85,7 +85,7 @@ class LLVMCompiler:
         return nexpr_res
     
     def call_function(self, name: str, args: list):
-        self.function_compiler.call_function(name, args)
+        return self.function_compiler.call_function(name, args, self._builder)
 
     def create_empty_var_by_type(self, type: ir.Type):
         if type == 'numb':
@@ -107,7 +107,7 @@ class LLVMCompiler:
         if n_col * n_row != vars:
             while len(vars) != n_col * n_row:
                 vars.append(" " * (MAX_STR_SIZE - 1) + '\0')
-        return TableVariable(vars, n_col, n_row, self.main_builder)
+        return TableVariable(vars, n_col, n_row, self._builder)
         
     def convert_type(self, type: str) -> ir.Type:
         result_type = None

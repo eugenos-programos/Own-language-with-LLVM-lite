@@ -1,5 +1,5 @@
 from llvmlite import ir
-from src.IterVariable import IterVariable
+from .IterVariable import IterVariable
 
 
 class RowVariable(IterVariable):
