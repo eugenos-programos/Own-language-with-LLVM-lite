@@ -1,6 +1,6 @@
 from llvmlite import ir
 from src.configs import MAX_STR_SIZE
-from src.IterVariable import IterVariable
+from .IterVariable import IterVariable
 
 
 class TableVariable(IterVariable):

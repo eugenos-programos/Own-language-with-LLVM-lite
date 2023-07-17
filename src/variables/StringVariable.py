@@ -1,10 +1,11 @@
 from llvmlite import ir
 from src.configs import MAX_STR_SIZE
+from ..basic_types import string
 
 
 class StringVariable:
 
-    type = ir.ArrayType(ir.IntType(8), MAX_STR_SIZE)
+    basic_type = string
 
     def __init__(self, value: str, builder: ir.builder.IRBuilder) -> None:
         if len(value) != MAX_STR_SIZE - 1:
