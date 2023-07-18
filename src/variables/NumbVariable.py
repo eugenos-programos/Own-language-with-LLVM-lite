@@ -9,7 +9,7 @@ class NumbVariable:
         value = float(value) if isinstance(value, int) else value
         if isinstance(value, float):
             self.var = ir.Constant(
-                self.type,
+                self.basic_type,
                 value
             )
             self.raw_var = value
@@ -19,7 +19,7 @@ class NumbVariable:
         self.compile_numb_init()
 
     def compile_numb_init(self):
-        self.ptr = self.builder.alloca(self.type)
+        self.ptr = self.builder.alloca(self.basic_type)
         self.builder.store(self.var, self.ptr)
 
     def get_value(self):

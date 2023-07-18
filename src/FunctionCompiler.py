@@ -58,17 +58,18 @@ class FunctionCompiler:
 
     def call_print_func(self, variable: RowVariable | NumbVariable | TableVariable | ColumnVariable | StringVariable, builder: ir.builder.IRBuilder):
         if isinstance(variable, NumbVariable):
-            format_string = "%.3f\n\0"
+            format_string = StringVariable("%.3f\n\0", builder)
+            self._functions["printf"](builder, format_string, variable)
         elif isinstance(variable, StringVariable):
-            format_string = "%s\n\0"
-            self._functions["printf"](builder, variable)
+            format_string = StringVariable("%s\n\0", builder)
+            self._functions["printf"](builder, format_string, variable)
         elif isinstance(variable, (ColumnVariable, RowVariable)):
             pass  # call __print_row_col_func
         elif isinstance(variable, TableVariable):
             pass # call __print_table_func
-        c_fmt = StringVariable(format_string, builder)
+        #c_fmt = StringVariable(format_string, builder)
 
-        self._functions
+        #self._functions
 
     def call_custom_func(self, name, args):
         return_var = ...
