@@ -898,7 +898,11 @@ class LangParserListener(ParseTreeListener):
                 vals.append(" ")
         if len(vals) != n_vals:
             raise SemanticAnalyzerException("Input list number mismatch")
-        return self.program_compiler.call_create_row_col_func(vals, isinstance(ctx, LangParser.CreateColStmtContext))
+        if isinstance(ctx, LangParser.CreateColStmtContext):
+            var = ColumnVariable(vals, self.program_compiler._builder)
+        else:
+            var = RowVariable(vals, self.program_compiler._builder)
+        return var
 
     # Exit a parse tree produced by LangParser#createRowStmt.
     def exitCreateRowStmt(self, ctx: LangParser.CreateRowStmtContext):

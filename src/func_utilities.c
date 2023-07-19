@@ -5,7 +5,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-void print_row_or_column(char array[][STR_MAX_SIZE], int rows, int is_column)
+void print_row_or_column(char array[][STR_MAX_SIZE], double rows, double is_column)
 {
     printf("[");
     for (int i = 0; i < rows; i++)

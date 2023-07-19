@@ -20,7 +20,7 @@ class FunctionCompiler:
         function_parameters = [
             [VoidVariable, [i8.as_pointer()], "printf", True],
             [NumbVariable, [], "length", False],
-            [VoidVariable, [iter, i32, i32], "print_row_or_column", False],
+            [VoidVariable, [iter, number, number], "print_row_or_column", False],
             [StringVariable, [], "read_string", False],
             [VoidVariable, [iter, i32, i32], "print_table", False],
             [TableVariable, [iter, i32, i32, iter, i32, i32], "mul_tables", False]
@@ -41,8 +41,8 @@ class FunctionCompiler:
         self._functions[name] = function
 
     def call_function(self, name: str, args: list, builder: ir.builder.IRBuilder):
-        call_function = self._call_function_map[name]
-        return call_function(*args, builder)
+        call_function_var = self._call_function_map[name]
+        return call_function_var(*args, builder)
 
     def call_mult_tables_function(self, first_table: TableVariable, second_table: TableVariable, builder: ir.builder.IRBuilder):
         if first_table.n_rows != second_table.n_rows:
@@ -64,7 +64,8 @@ class FunctionCompiler:
             format_string = StringVariable("%s\n\0", builder)
             self._functions["printf"](builder, format_string, variable)
         elif isinstance(variable, (ColumnVariable, RowVariable)):
-            pass  # call __print_row_col_func
+            is_column = NumbVariable(1, builder) if isinstance(variable, ColumnVariable) else NumbVariable(0, builder)
+            self._functions["print_row_or_column"](builder, variable, variable.size, is_column)
         elif isinstance(variable, TableVariable):
             pass # call __print_table_func
         #c_fmt = StringVariable(format_string, builder)
