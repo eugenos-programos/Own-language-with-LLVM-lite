@@ -1,6 +1,7 @@
 from llvmlite import ir
 from src.configs import MAX_STR_SIZE
 from .IterVariable import IterVariable
+from .NumbVariable import NumbVariable
 
 
 class TableVariable(IterVariable):
@@ -8,8 +9,8 @@ class TableVariable(IterVariable):
     def __init__(self, elements: tuple = None, n_cols: int = None, n_rows: int = None, builder: ir.builder.IRBuilder = None, ptr=None) -> None:
         super().__init__(elements, n_cols * n_rows, builder, ptr)
 
-        self.n_rows = n_rows
-        self.n_cols = n_cols
+        self.n_rows = NumbVariable(n_rows, builder)
+        self.n_cols = NumbVariable(n_cols, builder)
 
     def set_value(self, value):
         self.n_cols = value.n_cols

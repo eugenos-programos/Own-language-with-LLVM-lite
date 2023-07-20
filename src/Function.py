@@ -7,7 +7,6 @@ class Function:
     def __init__(self, module: ir.Module, function_type: ir.FunctionType, name: str, return_var_type) -> None:
         self.arg_types = function_type.args
         self._return_type = return_var_type
-        print(type(function_type))
         self._function = ir.Function(
             module, 
             function_type,
