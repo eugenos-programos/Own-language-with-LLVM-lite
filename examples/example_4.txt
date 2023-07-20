@@ -1,3 +1,2 @@
-table a = create_table(1, 2, ["df", "fdf"]);
-table b = create_table(1, 2, ["dfgfg", "dfdf"]);
-print(a * b);
+row a = create_row(2, ["dfaaaa", "fdfaaaa"]);
+print(length(a));

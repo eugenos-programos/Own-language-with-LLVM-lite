@@ -589,13 +589,8 @@ class LangParserListener(ParseTreeListener):
             return result
 
     def findLengthStmtCtxtResult(self, ctx: LangParser.LengthStmtContext):
-        result = self.findNumbExprResult(ctx.numbExpr())
-        if isinstance(result, TableVariable):
-            cvar = ir.Constant(NumbVariable.type,
-                               result.n_cols * result.n_rows)
-        else:
-            cvar = ir.Constant(NumbVariable.type, result.size)
-        return NumbVariable(cvar, self.program_compiler.main_builder)
+        var = self.findNumbExprResult(ctx.numbExpr())
+        return self.program_compiler.call_function("length", [var])
 
     def findreshapeStmtCtxtRes(self, ctx: LangParser.ReshapeStmtContext):
         arg1 = self.findNumbExprResult(ctx.numbExpr(0))
