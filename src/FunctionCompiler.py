@@ -14,7 +14,7 @@ class FunctionCompiler:
         self._load_builtin_functions()
         self._call_function_map = {
             "print": self.call_print_func,
-            "length": self.call_length_func
+            "length": self.call_length_func,
         }
 
     def _load_builtin_functions(self):
@@ -42,10 +42,11 @@ class FunctionCompiler:
         self._functions[name] = function
 
     def call_function(self, name: str, args: list, builder: ir.builder.IRBuilder):
-        call_function_var = self._call_function_map[name]
-        return call_function_var(*args, builder)
+        call_function_var = self._call_function_map[name] if self._call_function_map.get(name) is not None \
+                                                          else self._functions[name]
+        return call_function_var(builder, *args)
 
-    def call_mult_tables_function(self, first_table: TableVariable, second_table: TableVariable, builder: ir.builder.IRBuilder):
+    def call_mult_tables_function(self, builder: ir.builder.IRBuilder, first_table: TableVariable, second_table: TableVariable):
         if first_table.n_rows != second_table.n_rows:
             raise ValueError("N rows is not equal")
         args = (
@@ -57,7 +58,7 @@ class FunctionCompiler:
             NumbVariable(second_table.n_cols, builder)
         )
 
-    def call_print_func(self, variable: RowVariable | NumbVariable | TableVariable | ColumnVariable | StringVariable, builder: ir.builder.IRBuilder) -> VoidVariable:
+    def call_print_func(self, builder: ir.builder.IRBuilder, variable: RowVariable | NumbVariable | TableVariable | ColumnVariable | StringVariable) -> VoidVariable:
         if isinstance(variable, NumbVariable):
             format_string = StringVariable("%.3f\n\0", builder)
             return self._functions["printf"](builder, format_string, variable)
@@ -73,22 +74,11 @@ class FunctionCompiler:
 
         #self._functions
 
-    def call_length_func(self, variable: IterVariable, builder: ir.builder.IRBuilder) -> NumbVariable:
+    def call_length_func(self, builder: ir.builder.IRBuilder, variable: IterVariable) -> NumbVariable:
         return variable.size
-
-    def call_custom_func(self, name, args):
-        return_var = ...
-        # call custom function
-        return return_var
         
     def call_reshape_func(self, arg1: TableVariable, arg2: NumbVariable, arg3: NumbVariable):
         if not isinstance(arg1, TableVariable) and not isinstance(arg2, NumbVariable) and not isinstance(arg3, NumbVariable):
-            raise ValueError(
-                "Invalid arg types combination - {}, {}, {}".format(type(arg1), type(arg2), type(arg3)))
+            raise ValueError("Invalid arg types combination - {}, {}, {}".format(type(arg1), type(arg2), type(arg3)))
         return TableVariable(arg1.var, arg2, arg3, self.main_builder)
-
-    def read_string(self) -> StringVariable:
-        # call __read_str_func
-        result = ...
-        return result
     

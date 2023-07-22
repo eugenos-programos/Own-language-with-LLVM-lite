@@ -36,7 +36,6 @@ const char *read_string()
     static char str[STR_MAX_SIZE];
     printf("Enter string:");
     scanf("%s", str);
-    printf("%s", str);
     return str;
 }
 

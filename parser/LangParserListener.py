@@ -548,8 +548,7 @@ class LangParserListener(ParseTreeListener):
                     ) if func_expr.createColStmt() else func_expr.createRowStmt())
                     return var
                 elif func_expr.readStrStmt():
-
-                    return self.program_compiler.read_string()
+                    return self.program_compiler.call_function("read_string")
                 elif func_expr.createTablStmt():
                     func_ctxt: LangParser.CreateTablStmtContext = func_expr.createTablStmt()
                     if len(func_ctxt.NUMBER()) > 2:
