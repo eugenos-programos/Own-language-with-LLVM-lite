@@ -1,2 +1,2 @@
-row a = create_row(2, ["dfaaaa", "fdfaaaa"]);
-print(length(a));
+string a = read_string();
+print(a);
