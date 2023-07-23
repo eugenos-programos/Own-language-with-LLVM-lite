@@ -14,8 +14,11 @@ class Function:
         )
 
     def _save_function_result(self, func_res: ir.AllocaInstr, builder: ir.builder):
-        if self._return_type != VoidVariable:
+        if self._return_type == VoidVariable:
             return None
+        elif self._return_type == StringVariable:
+            var = StringVariable(func_res, builder)
+            return var
         return self._return_type(func_res, builder)
 
     def __call__(self, builder: ir.builder, *args) -> Any:

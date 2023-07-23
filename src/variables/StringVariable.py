@@ -14,12 +14,11 @@ class StringVariable:
             self.ptr = self.builder.alloca(self.basic_type)
             self.builder.store(value, self.ptr)
         else:
-            if len(value) != MAX_STR_SIZE - 1:
+            if len(value) < MAX_STR_SIZE - 1:
                 value += " " * (MAX_STR_SIZE - 1 - len(value))
             value += '\0'
             self.builder = builder
-            self.var = ir.Constant(ir.ArrayType(ir.IntType(8), MAX_STR_SIZE), bytearray(
-                value, 'utf-8'))
+            self.var = ir.Constant(ir.ArrayType(ir.IntType(8), MAX_STR_SIZE), bytearray(value, 'utf-8'))
             self.type = ir.PointerType(ir.IntType(8))
             self.ptr = self.builder.alloca(
                 ir.ArrayType(ir.IntType(8), MAX_STR_SIZE))

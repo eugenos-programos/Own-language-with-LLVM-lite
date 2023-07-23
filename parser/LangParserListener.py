@@ -519,11 +519,10 @@ class LangParserListener(ParseTreeListener):
                 self.global_vars[str_name] = value
             else:
                 self.global_vars[str_name] = NumbVariable(
-                    str_name, value, self.program_compiler.main_builder)
+                    str_name, value, self.program_compiler._builder)
         elif var_type == 'string':
             if not isinstance(value, StringVariable):
-                self.global_vars[str_name] = StringVariable(
-                    str_name, value, self.program_compiler.main_builder)
+                self.global_vars[str_name] = StringVariable(value, self.program_compiler._builder)
             else:
                 self.global_vars[str_name] = value
         elif var_type in ['row', 'column', 'table']:

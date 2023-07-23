@@ -19,12 +19,12 @@ class FunctionCompiler:
 
     def _load_builtin_functions(self):
         function_parameters = [
-            [VoidVariable, [i8.as_pointer()], "printf", True],
+            [VoidVariable, [string], "printf", True],
             [NumbVariable, [], "length", False],
             [VoidVariable, [iter, number, number], "print_row_or_column", False],
             [StringVariable, [], "read_string", False],
-            [VoidVariable, [iter, i32, i32], "print_table", False],
-            [TableVariable, [iter, i32, i32, iter, i32, i32], "mul_tables", False]
+            [VoidVariable, [iter, number, number], "print_table", False],
+            [TableVariable, [iter, number, number, iter, number, number], "mul_tables", False]
         ]
         for func_params in function_parameters:
             self._save_func_to_dict(*func_params)
