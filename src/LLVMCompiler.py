@@ -73,16 +73,8 @@ class LLVMCompiler:
     def _load_builtin_func(self):
         self.function_compiler.load_builtin_functions()
 
-    def process_numb_expr(self, ctx: LangParser.NumbExprContext):
-        first_operand = float(
-            str(ctx.numbExpr(0).returnType().basicType().children[0]))
-        second_operand = float(
-            str(ctx.numbExpr(1).returnType().basicType().children[0]))
-        nexpr_res = self._builder.fadd(
-            self.numb_type(first_operand),
-            self.numb_type(second_operand)
-        )
-        return nexpr_res
+    def find_expression_result(self, first_variable, operation_sign: str, second_variable):
+        return self.expression_compiler.process_numb_expr(first_variable, operation_sign, second_variable)
     
     def call_function(self, name: str, args: list = []):
         return self.function_compiler.call_function(name, args, self._builder)

@@ -518,8 +518,7 @@ class LangParserListener(ParseTreeListener):
             if isinstance(value, NumbVariable):
                 self.global_vars[str_name] = value
             else:
-                self.global_vars[str_name] = NumbVariable(
-                    str_name, value, self.program_compiler._builder)
+                self.global_vars[str_name] = NumbVariable(value, self.program_compiler._builder)
         elif var_type == 'string':
             if not isinstance(value, StringVariable):
                 self.global_vars[str_name] = StringVariable(value, self.program_compiler._builder)
@@ -606,24 +605,7 @@ class LangParserListener(ParseTreeListener):
         sign = str(signctxt.boolSign().children[0]) if signctxt.boolSign() else str(
             signctxt.numbSign().children[0])
         if type1 == type2:
-            if signctxt.boolSign():
-                boolsignCtxt: LangParser.BoolSignContext = signctxt.boolSign()
-                if boolsignCtxt.EQUAL():
-                    return res1 == res2
-                if boolsignCtxt.NOT_EQUAL():
-                    return res1 != res2
-            elif signctxt.numbSign():
-                numbsignctxt: LangParser.NumbSignContext = signctxt.numbSign()
-                if numbsignctxt.PLUS():
-                    return res1 + res2
-                if numbsignctxt.MINUS():
-                    return res1 - res2
-                if numbsignctxt.DIV():
-                    return res1 / res2
-                if numbsignctxt.FULL_DIV():
-                    return res1 // res2
-                if numbsignctxt.MULT():
-                    return self.program_compiler.function_compiler.call_mult_tables_function(res1, res2, self.program_compiler._builder)
+            return self.program_compiler.find_expression_result(res1, sign, res2)
     # Enter a parse tree produced by LangParser#va  rDeclStmt.
 
     def enterVarDeclStmt(self, ctx: LangParser.VarDeclStmtContext):
