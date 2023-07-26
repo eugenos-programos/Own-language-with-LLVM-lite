@@ -94,12 +94,15 @@ class LLVMCompiler:
             raise ValueError("Unkown type - {}".format(type))
 
     def create_table(self, vars, n_col, n_row):
-        vars = [var + '\0' + ' ' * (MAX_STR_SIZE - 1 - len(var))
+        vars = [var + ' ' * (MAX_STR_SIZE - 1 - len(var))
                 for var in vars]
         if n_col * n_row != vars:
             while len(vars) != n_col * n_row:
                 vars.append(" " * (MAX_STR_SIZE - 1) + '\0')
         return TableVariable(vars, n_col, n_row, self._builder)
+    
+    def create_row(self, elements: list[str]):
+        return RowVariable(elements, self._builder, func=self.function_compiler.get_function_by_name("toDynamic2"))
         
     def convert_type(self, type: str) -> ir.Type:
         result_type = None

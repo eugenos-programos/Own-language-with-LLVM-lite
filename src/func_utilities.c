@@ -5,19 +5,33 @@
 #include <string.h>
 #include <stdbool.h>
 
-void print_row_or_column(char array[][STR_MAX_SIZE], double rows, double is_column)
+void print_row_or_column(char ** array, double rows, double is_column)
 {
     printf("[");
     for (int i = 0; i < rows; i++)
     {
-        is_column ? printf("%s\n|", array[i]) : printf("%s\t|", array[i]);
+        is_column ? printf("%s\n|", array[i]) : puts(array[i]);
     }
     if (!is_column)
         printf("\n");
     printf("]\n");
 }
 
-void print_table(char matrix[][STR_MAX_SIZE], int rows, int columns)
+char ** toDynamic2(size_t n, char strings[][STR_MAX_SIZE])
+{
+    char ** arr = malloc(n * sizeof(char*));
+    printf("%c", strings[1]);
+    exit(1);
+    for(size_t i = 0; i < n; ++i)
+    {
+        size_t size = strlen(strings[i]);
+        arr[i] = malloc((size + 1) * sizeof(char));
+        strcpy(arr[i], strings[i]);
+    }
+    return arr;
+}
+
+void print_table(char ** matrix, int rows, int columns)
 {
     printf("[[");
     for (int i = 0; i < rows; i++)

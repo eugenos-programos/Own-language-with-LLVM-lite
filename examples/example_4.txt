@@ -1,2 +1,1 @@
-string a = read_string();
-print(a);
+row a = create_row(3, [345, 2, 1]);
