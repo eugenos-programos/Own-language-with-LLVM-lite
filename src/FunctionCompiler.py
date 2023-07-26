@@ -25,7 +25,7 @@ class FunctionCompiler:
             [StringVariable, [], "read_string", False],
             [VoidVariable, [iter, number, number], "print_table", False],
             [TableVariable, [iter, number, number, iter, number, number], "mul_tables", False],
-            [None, [number, ir.ArrayType(ir.ArrayType(i8, MAX_STR_SIZE), MAX_ARR_SIZE)], "toDynamic2", False]
+            [None, [number, ir.ArrayType(ir.ArrayType(i8, MAX_STR_SIZE), MAX_ARR_SIZE).as_pointer()], "toDynamic2", False]
         ]
         for func_params in function_parameters:
             self._save_func_to_dict(*func_params)
@@ -33,7 +33,7 @@ class FunctionCompiler:
     def _save_func_to_dict(self, return_type: ir.Type, arg_types: list, name: str, var_arg: bool = False):
         function = Function(self.module,
             ir.FunctionType(
-                return_type.basic_type if not return_type is None else ir.ArrayType(ir.ArrayType(i8, MAX_STR_SIZE), MAX_ARR_SIZE),
+                return_type.basic_type if not return_type is None else iter,
                 arg_types,
                 var_arg=var_arg
             ),

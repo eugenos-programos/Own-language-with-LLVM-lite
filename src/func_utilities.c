@@ -1,4 +1,5 @@
 #define STR_MAX_SIZE 20
+#define ARR_MAX_SIZE 20
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,21 +11,19 @@ void print_row_or_column(char ** array, double rows, double is_column)
     printf("[");
     for (int i = 0; i < rows; i++)
     {
-        is_column ? printf("%s\n|", array[i]) : puts(array[i]);
+        is_column ? printf("%s\n|", array[i]) : printf("%s|", array[i]);
     }
     if (!is_column)
         printf("\n");
     printf("]\n");
 }
 
-char ** toDynamic2(size_t n, char strings[][STR_MAX_SIZE])
+char ** toDynamic2(double n, char strings[ARR_MAX_SIZE][STR_MAX_SIZE])
 {
     char ** arr = malloc(n * sizeof(char*));
-    printf("%c", strings[1]);
-    exit(1);
-    for(size_t i = 0; i < n; ++i)
+    for(int i = 0; i < n; ++i)
     {
-        size_t size = strlen(strings[i]);
+        int size = strlen(strings[i]);
         arr[i] = malloc((size + 1) * sizeof(char));
         strcpy(arr[i], strings[i]);
     }
