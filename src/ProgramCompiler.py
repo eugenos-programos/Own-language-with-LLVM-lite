@@ -9,7 +9,7 @@ import time
 import os
 
 
-class LLVMCompiler:
+class ProgramCompiler:
     def __init__(self) -> None:
         print("Program compilation into IR code is starting...")
         self._module = ir.Module()
@@ -94,15 +94,13 @@ class LLVMCompiler:
             raise ValueError("Unkown type - {}".format(type))
 
     def create_table(self, vars, n_col, n_row):
-        vars = [var + ' ' * (MAX_STR_SIZE - 1 - len(var))
-                for var in vars]
-        if n_col * n_row != vars:
-            while len(vars) != n_col * n_row:
-                vars.append(" " * (MAX_STR_SIZE - 1) + '\0')
-        return TableVariable(vars, n_col, n_row, self._builder)
+        return TableVariable(vars, n_col, n_row, self._builder, func=self.function_compiler.get_function_by_name("toDynamic2"))
     
     def create_row(self, elements: list[str]):
         return RowVariable(elements, self._builder, func=self.function_compiler.get_function_by_name("toDynamic2"))
+    
+    def create_column(self, elements: list[str]):
+        return ColumnVariable(elements, self._builder, func=self.function_compiler.get_function_by_name("toDynamic2"))
         
     def convert_type(self, type: str) -> ir.Type:
         result_type = None

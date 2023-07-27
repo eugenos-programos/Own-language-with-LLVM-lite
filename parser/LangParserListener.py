@@ -4,7 +4,7 @@ if __name__ is not None and "." in __name__:
     from .LangParser import LangParser
 else:
     from LangParser import LangParser
-from src.LLVMCompiler import LLVMCompiler
+from src.ProgramCompiler import ProgramCompiler
 from src.variables import *
 
 
@@ -82,7 +82,7 @@ class LangParserListener(ParseTreeListener):
         self.local_ifels_vars = {}
 
         # init program compiler
-        self.program_compiler = LLVMCompiler()
+        self.program_compiler = ProgramCompiler()
 
     # Exit a parse tree produced by LangParser#program.
     def exitProgram(self, ctx: LangParser.ProgramContext):
@@ -546,7 +546,7 @@ class LangParserListener(ParseTreeListener):
                         func_expr.createColStmt() if func_expr.createColStmt() else func_expr.createRowStmt()
                     )
                     var = self.program_compiler.create_row(elements) if func_expr.createRowStmt() \
-                        else None
+                        else self.program_compiler.create_column(elements)
                     return var
                 elif func_expr.readStrStmt():
                     return self.program_compiler.call_function("read_string")
@@ -557,16 +557,16 @@ class LangParserListener(ParseTreeListener):
                             "Table can be only 2-dimensional")
                     if len(func_ctxt.NUMBER()) < 2:
                         raise SemanticAnalyzerException("n_rows param and n_cols param are required")
-                    n_cols = int(float(str(func_ctxt.NUMBER(0))))
-                    n_rows = int(float(str(func_ctxt.NUMBER(1))))
+                    n_cols = int(float(str(func_ctxt.NUMBER(1))))
+                    n_rows = int(float(str(func_ctxt.NUMBER(0))))
                     if func_ctxt.listStmt():
-                        vals = self.extractListVals(func_ctxt.listStmt())
+                        elements = self.pad_values_in_create_stmt(func_ctxt)
                     else:
-                        vals = []
-                    if n_cols < 0 or n_rows < 0 or n_rows * n_cols < len(vals):
+                        elements = []
+                    if n_cols < 0 or n_rows < 0 or n_rows * n_cols < len(elements):
                         raise SemanticAnalyzerException(
                             "Invalid n_rows and n_cols combination")
-                    return self.program_compiler.create_table(vals, n_rows, n_cols)
+                    return self.program_compiler.create_table(elements, n_cols, n_rows)
                 elif func_expr.reshapeStmt():
                     return self.findreshapeStmtCtxtRes(func_expr.reshapeStmt())
                 elif func_expr.lengthStmt():
@@ -868,9 +868,12 @@ class LangParserListener(ParseTreeListener):
     def enterCreateRowStmt(self, ctx: LangParser.CreateRowStmtContext):
         pass
 
-    def pad_values_in_create_stmt(self, ctx: LangParser.CreateColStmtContext | LangParser.CreateRowStmtContext) -> list:
+    def pad_values_in_create_stmt(self, ctx: LangParser.CreateColStmtContext | LangParser.CreateRowStmtContext | LangParser.CreateTablStmtContext) -> list:
         vals = self.extractListVals(ctx.listStmt())
-        n_vals = int(str(ctx.NUMBER())) if ctx.NUMBER() else 0
+        if not isinstance(ctx, LangParser.CreateTablStmtContext):
+            n_vals = int(str(ctx.NUMBER())) if ctx.NUMBER() else 0
+        else:
+            n_vals = int(str(ctx.NUMBER(0))) * int(str(ctx.NUMBER(1)))
         if len(vals) < n_vals:
             while len(vals) != n_vals:
                 vals.append(" ")

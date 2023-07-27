@@ -4,8 +4,8 @@ from .IterVariable import IterVariable
 
 class ColumnVariable(IterVariable):
 
-    def __init__(self, elements: tuple, builder: ir.builder.IRBuilder, ptr=None) -> None:
-        super().__init__(elements, len(elements), builder, ptr)
+    def __init__(self, elements: tuple, builder: ir.builder.IRBuilder, ptr=None, func = None) -> None:
+        super().__init__(elements, len(elements), builder, ptr, func)
 
     def set_value(self, value):
         self.size = value.size

@@ -12,6 +12,8 @@ class IterVariable:
         self.builder = builder
         self.size = NumbVariable(size, builder)
 
+        elements = [element + " " * (MAX_STR_SIZE - len(element) - 1) for element in elements]
+
         elements += [" " * (MAX_STR_SIZE - 1)] * (MAX_ARR_SIZE - len(elements))
 
         if ptr is not None:
@@ -20,9 +22,9 @@ class IterVariable:
         else:
             cvars = [ir.Constant(ir.ArrayType(ir.IntType(8), MAX_STR_SIZE), bytearray(
                 var + ' ' * (MAX_STR_SIZE - len(var) - 1) + '\0', 'utf-8')) for var in elements]
-            self.type = ir.ArrayType(ir.ArrayType(ir.IntType(8), MAX_STR_SIZE), len(elements))
-            self.var = ir.Constant(self.type, cvars)
-            self.ptr = self.builder.alloca(self.type)
+            type_ = ir.ArrayType(ir.ArrayType(ir.IntType(8), MAX_STR_SIZE), len(elements))
+            self.var = ir.Constant(type_, cvars)
+            self.ptr = self.builder.alloca(type_)
             self.builder.store(self.var, self.ptr)
 
             result = func(self.builder, self.size, self)
