@@ -16,6 +16,7 @@ class FunctionCompiler:
             "print": self.call_print_func,
             "length": self.call_length_func,
         }
+        StringVariable.convert_func = self._functions["toDynamicStr"]
 
     def _load_builtin_functions(self):
         function_parameters = [
@@ -25,7 +26,8 @@ class FunctionCompiler:
             [StringVariable, [], "read_string", False],
             [VoidVariable, [iter, number, number], "print_table", False],
             [TableVariable, [iter, number, number, iter, number, number], "mul_tables", False],
-            [None, [number, ir.ArrayType(ir.ArrayType(i8, MAX_STR_SIZE), MAX_ARR_SIZE).as_pointer()], "toDynamic2", False]
+            [IterVariable, [number, ir.ArrayType(ir.ArrayType(i8, MAX_STR_SIZE), MAX_ARR_SIZE).as_pointer()], "toDynamic2", False],
+            [None, [ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()], "toDynamicStr", False]
         ]
         for func_params in function_parameters:
             self._save_func_to_dict(*func_params)
@@ -33,7 +35,7 @@ class FunctionCompiler:
     def _save_func_to_dict(self, return_type: ir.Type, arg_types: list, name: str, var_arg: bool = False):
         function = Function(self.module,
             ir.FunctionType(
-                return_type.basic_type if not return_type is None else iter,
+                return_type.basic_type if return_type is not None else string,
                 arg_types,
                 var_arg=var_arg
             ),

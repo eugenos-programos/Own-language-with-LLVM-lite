@@ -30,6 +30,13 @@ char ** toDynamic2(double n, char strings[ARR_MAX_SIZE][STR_MAX_SIZE])
     return arr;
 }
 
+char * toDynamicStr(char string[STR_MAX_SIZE])
+{
+    char * arr = malloc(STR_MAX_SIZE * sizeof(char));
+    strcpy(arr, string);
+    return arr;
+}
+
 void print_table(char ** matrix, double rows, double columns)
 {
     int rows_cast = (int) rows;
@@ -46,11 +53,11 @@ void print_table(char ** matrix, double rows, double columns)
     printf("]\n");
 }
 
-const char *read_string()
+char * read_string()
 {
-    static char str[STR_MAX_SIZE];
+    char * str = malloc(STR_MAX_SIZE * sizeof(char));
     printf("Enter string:");
-    scanf("%s", str);
+    fgets(str, STR_MAX_SIZE, stdin);
     return str;
 }
 

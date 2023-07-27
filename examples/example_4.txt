@@ -1,2 +1,2 @@
-table afg = create_table(5, 1, [34554, 2, 1, 3]);
-print(afg);
+string s = read_string();
+print(s);

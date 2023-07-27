@@ -28,9 +28,10 @@ class IterVariable:
             self.builder.store(self.var, self.ptr)
 
             result = func(self.builder, self.size, self)
-            self.ptr = self.builder.alloca(iter)
+            self.ptr = self.builder.alloca(self.basic_type)
             self.builder.store(result, self.ptr)
             self.ptr = self.builder.load(self.ptr)
 
     def get_value(self):
         return self.ptr
+    
