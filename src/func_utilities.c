@@ -1,30 +1,45 @@
 #define STR_MAX_SIZE 20
+#define ARR_MAX_SIZE 20
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 
-void print_row_or_column(char array[][STR_MAX_SIZE], double rows, double is_column)
+void print_row_or_column(char ** array, double rows, double is_column)
 {
     printf("[");
     for (int i = 0; i < rows; i++)
     {
-        is_column ? printf("%s\n|", array[i]) : printf("%s\t|", array[i]);
+        is_column ? printf("%s|\n", array[i]) : printf("%s|", array[i]);
     }
     if (!is_column)
         printf("\n");
     printf("]\n");
 }
 
-void print_table(char matrix[][STR_MAX_SIZE], int rows, int columns)
+char ** toDynamic2(double n, char strings[ARR_MAX_SIZE][STR_MAX_SIZE])
 {
-    printf("[[");
-    for (int i = 0; i < rows; i++)
+    char ** arr = malloc(n * sizeof(char*));
+    for(int i = 0; i < n; ++i)
     {
-        for (int j = 0; j < columns; j++)
+        int size = strlen(strings[i]);
+        arr[i] = malloc((size + 1) * sizeof(char));
+        strcpy(arr[i], strings[i]);
+    }
+    return arr;
+}
+
+void print_table(char ** matrix, double rows, double columns)
+{
+    int rows_cast = (int) rows;
+    int columns_cast = (int) columns;
+    printf("[[");
+    for (int i = 0; i < rows_cast; ++i)
+    {
+        for (int j = 0; j < columns_cast; ++j)
         {
-            printf("%s\t|", matrix[j + rows * i]);
+            printf("%s\t|", matrix[j + i]);
         }
         printf("]\n");
     }

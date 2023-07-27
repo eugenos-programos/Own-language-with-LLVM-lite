@@ -1,7 +1,7 @@
 from llvmlite.ir import Module
 from llvmlite import ir
 from src.basic_types import *
-from src.configs import MAX_STR_SIZE
+from src.configs import MAX_STR_SIZE, MAX_ARR_SIZE
 from src.Function import Function
 from src.variables import *
 
@@ -24,7 +24,8 @@ class FunctionCompiler:
             [VoidVariable, [iter, number, number], "print_row_or_column", False],
             [StringVariable, [], "read_string", False],
             [VoidVariable, [iter, number, number], "print_table", False],
-            [TableVariable, [iter, number, number, iter, number, number], "mul_tables", False]
+            [TableVariable, [iter, number, number, iter, number, number], "mul_tables", False],
+            [None, [number, ir.ArrayType(ir.ArrayType(i8, MAX_STR_SIZE), MAX_ARR_SIZE).as_pointer()], "toDynamic2", False]
         ]
         for func_params in function_parameters:
             self._save_func_to_dict(*func_params)
@@ -32,7 +33,7 @@ class FunctionCompiler:
     def _save_func_to_dict(self, return_type: ir.Type, arg_types: list, name: str, var_arg: bool = False):
         function = Function(self.module,
             ir.FunctionType(
-                return_type.basic_type,
+                return_type.basic_type if not return_type is None else iter,
                 arg_types,
                 var_arg=var_arg
             ),
@@ -40,6 +41,9 @@ class FunctionCompiler:
             return_type
         )
         self._functions[name] = function
+
+    def get_function_by_name(self, name: str) -> ir.Function:
+        return self._functions.get(name)
 
     def call_function(self, name: str, args: list, builder: ir.builder.IRBuilder):
         call_function_var = self._call_function_map[name] if self._call_function_map.get(name) is not None \
@@ -69,10 +73,7 @@ class FunctionCompiler:
             is_column = NumbVariable(1, builder) if isinstance(variable, ColumnVariable) else NumbVariable(0, builder)
             return self._functions["print_row_or_column"](builder, variable, variable.size, is_column)
         elif isinstance(variable, TableVariable):
-            pass # call __print_table_func
-        #c_fmt = StringVariable(format_string, builder)
-
-        #self._functions
+            return self._functions["print_table"](builder, variable, variable.n_rows, variable.n_cols)
 
     def call_length_func(self, builder: ir.builder.IRBuilder, variable: IterVariable) -> NumbVariable:
         return variable.size

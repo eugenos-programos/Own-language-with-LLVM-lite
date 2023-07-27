@@ -19,6 +19,8 @@ class Function:
         elif self._return_type == StringVariable:
             var = StringVariable(func_res, builder)
             return var
+        elif self._return_type is None:
+            return func_res              ### return "raw" result
         return self._return_type(func_res, builder)
 
     def __call__(self, builder: ir.builder, *args) -> Any:
