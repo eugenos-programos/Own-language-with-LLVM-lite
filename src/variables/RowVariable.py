@@ -6,11 +6,10 @@ class RowVariable(IterVariable):
     def __init__(self, elements: list = None, builder: ir.builder.IRBuilder = None, ptr=None, func:ir.Function=None) -> None:
         super().__init__(elements, len(elements), builder, ptr, func)
 
-    def set_value(self, value):
+    def set_value(self, value: IterVariable):
         self.size = value.size
-        self.type = value.type
         self.var = value.var
-        self.compile_init()
+        self.ptr = value.ptr
 
     def get_element(self, index: int):
         return self.ptr

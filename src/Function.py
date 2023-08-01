@@ -16,7 +16,7 @@ class Function:
         print(name)
         self._is_convert_func = "toDynamic" in name
 
-    def _save_function_result(self, func_res: ir.AllocaInstr, builder: ir.builder) -> Variable | ir.AllocaInstr:
+    def _save_function_result(self, func_res: ir.AllocaInstr, builder: ir.builder, result_size: int) -> Variable | ir.AllocaInstr:
         if self._is_convert_func:
             return func_res
         if self._return_type == VoidVariable:
@@ -25,9 +25,10 @@ class Function:
             return StringVariable(func_res, builder)
         elif self._return_type == TableVariable:
             return TableVariable(func_res)
-        return self._return_type(func_res, builder)
+        elif self._return_type == IterVariable:
+            return IterVariable(func_res, result_size, builder)
 
-    def __call__(self, builder: ir.builder, *args) -> Any:
+    def __call__(self, builder: ir.builder, *args, **kwargs) -> Any:
         args = [arg.get_value() for arg in args]
         function_result = builder.call(self._function, args)
-        return self._save_function_result(function_result, builder)
+        return self._save_function_result(function_result, builder, kwargs.get("result_size"))

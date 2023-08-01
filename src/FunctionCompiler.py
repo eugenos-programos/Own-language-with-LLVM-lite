@@ -15,6 +15,7 @@ class FunctionCompiler:
         self._call_function_map = {
             "print": self.call_print_func,
             "length": self.call_length_func,
+            "del": self.call_del_func
         }
         StringVariable.convert_func = self._functions["toDynamicStr"]
 
@@ -27,7 +28,8 @@ class FunctionCompiler:
             [VoidVariable, [iter, number, number], "print_table", False],
             [TableVariable, [iter, number, number, iter, number, number], "mul_tables", False],
             [IterVariable, [number, ir.ArrayType(ir.ArrayType(i8, MAX_STR_SIZE), MAX_ARR_SIZE).as_pointer()], "toDynamic2", False],
-            [StringVariable, [ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()], "toDynamicStr", False]
+            [StringVariable, [ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()], "toDynamicStr", False],
+            [IterVariable, [iter, number, number], "delete_el", False]
         ]
         for func_params in function_parameters:
             self._save_func_to_dict(*func_params)
@@ -81,8 +83,11 @@ class FunctionCompiler:
     def call_length_func(self, builder: ir.builder.IRBuilder, variable: IterVariable) -> NumbVariable:
         return variable.size
         
-    def call_reshape_func(self, arg1: TableVariable, arg2: NumbVariable, arg3: NumbVariable):
+    def call_reshape_func(self, builder, arg1: TableVariable, arg2: NumbVariable, arg3: NumbVariable):
         if not isinstance(arg1, TableVariable) and not isinstance(arg2, NumbVariable) and not isinstance(arg3, NumbVariable):
             raise ValueError("Invalid arg types combination - {}, {}, {}".format(type(arg1), type(arg2), type(arg3)))
-        return TableVariable(arg1.var, arg2, arg3, self.main_builder)
+        return TableVariable(arg1.var, arg2, arg3, builder)
+    
+    def call_del_func(self, builder: ir.builder.IRBuilder, arg1: RowVariable | ColumnVariable, arg2: NumbVariable):
+        return self._functions["delete_el"](builder, arg1, arg2, arg1.size, result_size=arg1.size - NumbVariable(1, builder))
     

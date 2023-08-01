@@ -9,9 +9,16 @@ class IterVariable(Variable):
 
     basic_type = iter
 
-    def __init__(self, elements: tuple, size: int, builder: ir.builder.IRBuilder, ptr=None, func = None) -> None:
+    def __init__(self, elements: tuple, size: int | NumbVariable, builder: ir.builder.IRBuilder, ptr=None, func = None) -> None:
         self.builder = builder
-        self.size = NumbVariable(size, builder)
+        self.size = NumbVariable(size, builder) if not isinstance(size, NumbVariable) else size
+
+        if not isinstance(elements, (list, tuple)):
+            self.var = elements
+            self.ptr = self.builder.alloca(self.basic_type)
+            self.builder.store(elements, self.ptr)
+            self.ptr = self.builder.load(self.ptr)
+            return
 
         elements = [element + " " * (MAX_STR_SIZE - len(element) - 1) for element in elements]
 

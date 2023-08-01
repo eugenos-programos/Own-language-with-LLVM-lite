@@ -61,17 +61,17 @@ char * read_string()
     return str;
 }
 
-char **delete_el(char **arr, int index, int size)
+char **delete_el(char **arr, double index, double size)
 {
+    int index_cast = (int) index;
+    free(arr[index_cast]);
 
-    free(arr[index]);
-
-    for (int i = index; i < size - 1; ++i)
+    for (int i = index_cast; i < size - 1; ++i)
     {
         arr[i] = arr[i + 1];
     }
 
-    arr[size - 1] = NULL;
+    arr[index_cast - 1] = NULL;
     return arr;
 }
 
