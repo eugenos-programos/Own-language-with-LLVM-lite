@@ -4,23 +4,27 @@ from src.variables import *
 
 
 class Function:
-    def __init__(self, module: ir.Module, function_type: ir.FunctionType, name: str, return_var_type) -> None:
+    def __init__(self, module: ir.Module, function_type: ir.FunctionType, name: str, return_var_type: Variable) -> None:
         self.arg_types = function_type.args
         self._return_type = return_var_type
+        self.type = function_type
         self._function = ir.Function(
             module, 
             function_type,
             name
         )
+        print(name)
+        self._is_convert_func = "toDynamic" in name
 
-    def _save_function_result(self, func_res: ir.AllocaInstr, builder: ir.builder):
+    def _save_function_result(self, func_res: ir.AllocaInstr, builder: ir.builder) -> Variable | ir.AllocaInstr:
+        if self._is_convert_func:
+            return func_res
         if self._return_type == VoidVariable:
             return None
         elif self._return_type == StringVariable:
-            var = StringVariable(func_res, builder)
-            return var
-        elif self._return_type is None:
-            return func_res              ### return "raw" result
+            return StringVariable(func_res, builder)
+        elif self._return_type == TableVariable:
+            return TableVariable(func_res)
         return self._return_type(func_res, builder)
 
     def __call__(self, builder: ir.builder, *args) -> Any:

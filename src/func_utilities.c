@@ -9,7 +9,7 @@
 void print_row_or_column(char ** array, double rows, double is_column)
 {
     printf("[");
-    for (int i = 0; i < rows; i++)
+    for (int i = 0; i < rows; ++i)
     {
         is_column ? printf("%s|\n", array[i]) : printf("%s|", array[i]);
     }
@@ -66,7 +66,7 @@ char **delete_el(char **arr, int index, int size)
 
     free(arr[index]);
 
-    for (int i = index; i < size - 1; i++)
+    for (int i = index; i < size - 1; ++i)
     {
         arr[i] = arr[i + 1];
     }
@@ -81,7 +81,7 @@ char **insert_element(char **arr, int *size, int index, char *element)
     *size += 1;
     arr = realloc(arr, *size * sizeof(char *));
 
-    for (int i = *size - 1; i > index; i--)
+    for (int i = *size - 1; i > index; --i)
     {
         arr[i] = arr[i - 1];
     }
