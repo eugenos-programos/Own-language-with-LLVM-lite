@@ -1,10 +1,11 @@
 from llvmlite import ir
 from llvmlite.ir import CallInstr 
 from src.configs import MAX_STR_SIZE
-from ..basic_types import string, iter
+from ..basic_types import string
+from .Variable import Variable
 
 
-class StringVariable:
+class StringVariable(Variable):
 
     basic_type: ir.Type = string
     convert_func: ir.Function

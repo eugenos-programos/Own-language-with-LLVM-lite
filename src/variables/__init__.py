@@ -5,3 +5,4 @@ from .RowVariable import RowVariable
 from .TableVariable import TableVariable
 from .StringVariable import StringVariable
 from .VoidVariable import VoidVariable
+from .Variable import Variable

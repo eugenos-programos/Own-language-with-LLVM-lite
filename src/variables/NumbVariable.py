@@ -1,8 +1,9 @@
 from typing import Any
 from llvmlite import ir
+from .Variable import Variable
 
 
-class NumbVariable:
+class NumbVariable(Variable):
     basic_type = ir.DoubleType()
 
     def __init__(self, value: float | ir.PointerType, builder: ir.builder.IRBuilder) -> None:

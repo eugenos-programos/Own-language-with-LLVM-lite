@@ -2,9 +2,10 @@ from llvmlite import ir
 from src.configs import MAX_STR_SIZE, MAX_ARR_SIZE
 from ..basic_types import iter, i8
 from .NumbVariable import NumbVariable
+from .Variable import Variable
 
 
-class IterVariable:
+class IterVariable(Variable):
 
     basic_type = iter
 
