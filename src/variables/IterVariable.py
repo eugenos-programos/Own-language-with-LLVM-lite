@@ -8,8 +8,9 @@ from .Variable import Variable
 class IterVariable(Variable):
 
     basic_type = iter
+    convert_func: ir.Function
 
-    def __init__(self, elements: tuple, size: int | NumbVariable, builder: ir.builder.IRBuilder, ptr=None, func = None) -> None:
+    def __init__(self, elements: tuple, size: NumbVariable, builder: ir.builder.IRBuilder, ptr=None) -> None:
         self.builder = builder
         self.size = NumbVariable(size, builder) if not isinstance(size, NumbVariable) else size
 
@@ -35,7 +36,7 @@ class IterVariable(Variable):
             self.ptr = self.builder.alloca(type_)
             self.builder.store(self.var, self.ptr)
 
-            result = func(self.builder, self.size, self)
+            result = self.convert_func(self.builder, self.size, self)
             self.ptr = self.builder.alloca(self.basic_type)
             self.builder.store(result, self.ptr)
             self.ptr = self.builder.load(self.ptr)

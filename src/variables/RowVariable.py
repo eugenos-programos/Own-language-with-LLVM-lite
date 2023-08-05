@@ -1,10 +1,11 @@
 from llvmlite import ir
 from .IterVariable import IterVariable
+from .NumbVariable import NumbVariable
 
 
 class RowVariable(IterVariable):
-    def __init__(self, elements: list = None, builder: ir.builder.IRBuilder = None, ptr=None, func:ir.Function=None) -> None:
-        super().__init__(elements, len(elements), builder, ptr, func)
+    def __init__(self, elements: list, size: NumbVariable, builder: ir.builder.IRBuilder, ptr=None) -> None:
+        super().__init__(elements, size, builder, ptr)
 
     def set_value(self, value: IterVariable):
         self.size = value.size
