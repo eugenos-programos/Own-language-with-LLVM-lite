@@ -281,7 +281,7 @@ class LangParserListener(ParseTreeListener):
                 var_type = 'table'
             else:
                 raise TypeError(
-                    "Bro here is unknown object (((( -- {} | {}".format(type(var_obj), str_id))
+                    "Bro here is unknown object -- {} | {}".format(type(var_obj), str_id))
             return var_type, False
         elif isinstance(ctx, LangParser.BasicTypeContext) and ctx.NUMBER():
             return 'numb', False

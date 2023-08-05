@@ -1,3 +1,2 @@
-row r = create_row(2, ["sd", "sdsd"]);
-r = del(r, 0);
+column r = del(create_column(3, ["sd", "sdsd", "dfdf"]), 0);
 print(r);

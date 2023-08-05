@@ -93,14 +93,14 @@ class ProgramCompiler:
         else:
             raise ValueError("Unkown type - {}".format(type))
 
-    def create_table(self, vars, n_col, n_row):
-        return TableVariable(vars, n_col, n_row, self._builder, func=self.function_compiler.get_function_by_name("toDynamic2"))
+    def create_table(self, elements, n_col, n_row):
+        return TableVariable(elements, NumbVariable(n_row, self._builder), NumbVariable(n_col, self._builder), self._builder)
     
     def create_row(self, elements: list[str]):
-        return RowVariable(elements, self._builder, func=self.function_compiler.get_function_by_name("toDynamic2"))
+        return RowVariable(elements, NumbVariable(len(elements), self._builder), self._builder)
     
     def create_column(self, elements: list[str]):
-        return ColumnVariable(elements, self._builder, func=self.function_compiler.get_function_by_name("toDynamic2"))
+        return ColumnVariable(elements, NumbVariable(len(elements), self._builder), self._builder)
         
     def convert_type(self, type: str) -> ir.Type:
         result_type = None

@@ -18,6 +18,7 @@ class FunctionCompiler:
             "del": self.call_del_func
         }
         StringVariable.convert_func = self._functions["toDynamicStr"]
+        IterVariable.convert_func = self._functions["toDynamic2"]
 
     def _load_builtin_functions(self):
         function_parameters = [
@@ -27,9 +28,9 @@ class FunctionCompiler:
             [StringVariable, [], "read_string", False],
             [VoidVariable, [iter, number, number], "print_table", False],
             [TableVariable, [iter, number, number, iter, number, number], "mul_tables", False],
-            [IterVariable, [number, ir.ArrayType(ir.ArrayType(i8, MAX_STR_SIZE), MAX_ARR_SIZE).as_pointer()], "toDynamic2", False],
+            [[RowVariable, ColumnVariable, TableVariable], [number, ir.ArrayType(ir.ArrayType(i8, MAX_STR_SIZE), MAX_ARR_SIZE).as_pointer()], "toDynamic2", False],
             [StringVariable, [ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()], "toDynamicStr", False],
-            [IterVariable, [iter, number, number], "delete_el", False]
+            [[RowVariable, ColumnVariable], [iter, number, number], "delete_el", False]
         ]
         for func_params in function_parameters:
             self._save_func_to_dict(*func_params)
@@ -38,7 +39,7 @@ class FunctionCompiler:
         function = Function(
             self.module,
             ir.FunctionType(
-                return_var.basic_type,
+                return_var.basic_type if not isinstance(return_var, list) else iter,
                 arg_types,
                 var_arg=var_arg
             ),
