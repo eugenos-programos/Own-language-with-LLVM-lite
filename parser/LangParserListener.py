@@ -281,7 +281,7 @@ class LangParserListener(ParseTreeListener):
                 var_type = 'table'
             else:
                 raise TypeError(
-                    "Bro here is unknown object (((( -- {} | {}".format(type(var_obj), str_id))
+                    "Bro here is unknown object -- {} | {}".format(type(var_obj), str_id))
             return var_type, False
         elif isinstance(ctx, LangParser.BasicTypeContext) and ctx.NUMBER():
             return 'numb', False
@@ -550,6 +550,14 @@ class LangParserListener(ParseTreeListener):
                     return var
                 elif func_expr.readStrStmt():
                     return self.program_compiler.call_function("read_string")
+                elif func_expr.delFuncStmt():
+                    return self.program_compiler.call_function(
+                        "del", 
+                        [
+                            self.findNumbExprResult(func_expr.delFuncStmt().numbExpr(0)),
+                            self.findNumbExprResult(func_expr.delFuncStmt().numbExpr(1))
+                        ]
+                    )
                 elif func_expr.createTablStmt():
                     func_ctxt: LangParser.CreateTablStmtContext = func_expr.createTablStmt()
                     if len(func_ctxt.NUMBER()) > 2:

@@ -1,2 +1,2 @@
-table afg = create_table(5, 1, [34554, 2, 1, 3]);
-print(afg);
+column r = del(create_column(3, ["sd", "sdsd", "dfdf"]), 0);
+print(r);

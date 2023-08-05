@@ -6,11 +6,11 @@ from .NumbVariable import NumbVariable
 
 class TableVariable(IterVariable):
 
-    def __init__(self, elements: tuple = None, n_cols: int = None, n_rows: int = None, builder: ir.builder.IRBuilder = None, ptr=None, func=None) -> None:
-        super().__init__(elements, n_cols * n_rows, builder, ptr, func)
+    def __init__(self, elements: tuple, n_rows: NumbVariable, n_cols: NumbVariable, builder: ir.builder.IRBuilder, ptr=None) -> None:
+        super().__init__(elements, n_cols * n_rows, builder, ptr)
 
-        self.n_rows = NumbVariable(n_rows, builder)
-        self.n_cols = NumbVariable(n_cols, builder)
+        self.n_rows = n_rows
+        self.n_cols = n_cols
 
     def set_value(self, value):
         self.n_cols = value.n_cols

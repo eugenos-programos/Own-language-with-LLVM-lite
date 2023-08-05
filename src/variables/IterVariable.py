@@ -2,15 +2,24 @@ from llvmlite import ir
 from src.configs import MAX_STR_SIZE, MAX_ARR_SIZE
 from ..basic_types import iter, i8
 from .NumbVariable import NumbVariable
+from .Variable import Variable
 
 
-class IterVariable:
+class IterVariable(Variable):
 
     basic_type = iter
+    convert_func: ir.Function
 
-    def __init__(self, elements: tuple, size: int, builder: ir.builder.IRBuilder, ptr=None, func = None) -> None:
+    def __init__(self, elements: tuple, size: NumbVariable, builder: ir.builder.IRBuilder, ptr=None) -> None:
         self.builder = builder
-        self.size = NumbVariable(size, builder)
+        self.size = NumbVariable(size, builder) if not isinstance(size, NumbVariable) else size
+
+        if not isinstance(elements, (list, tuple)):
+            self.var = elements
+            self.ptr = self.builder.alloca(self.basic_type)
+            self.builder.store(elements, self.ptr)
+            self.ptr = self.builder.load(self.ptr)
+            return
 
         elements = [element + " " * (MAX_STR_SIZE - len(element) - 1) for element in elements]
 
@@ -27,10 +36,11 @@ class IterVariable:
             self.ptr = self.builder.alloca(type_)
             self.builder.store(self.var, self.ptr)
 
-            result = func(self.builder, self.size, self)
-            self.ptr = self.builder.alloca(iter)
+            result = self.convert_func(self.builder, self.size, self)
+            self.ptr = self.builder.alloca(self.basic_type)
             self.builder.store(result, self.ptr)
             self.ptr = self.builder.load(self.ptr)
 
     def get_value(self):
         return self.ptr
+    

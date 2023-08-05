@@ -9,7 +9,7 @@
 void print_row_or_column(char ** array, double rows, double is_column)
 {
     printf("[");
-    for (int i = 0; i < rows; i++)
+    for (int i = 0; i < rows; ++i)
     {
         is_column ? printf("%s|\n", array[i]) : printf("%s|", array[i]);
     }
@@ -30,6 +30,13 @@ char ** toDynamic2(double n, char strings[ARR_MAX_SIZE][STR_MAX_SIZE])
     return arr;
 }
 
+char * toDynamicStr(char string[STR_MAX_SIZE])
+{
+    char * arr = malloc(STR_MAX_SIZE * sizeof(char));
+    strcpy(arr, string);
+    return arr;
+}
+
 void print_table(char ** matrix, double rows, double columns)
 {
     int rows_cast = (int) rows;
@@ -46,25 +53,25 @@ void print_table(char ** matrix, double rows, double columns)
     printf("]\n");
 }
 
-const char *read_string()
+char * read_string()
 {
-    static char str[STR_MAX_SIZE];
+    char * str = malloc(STR_MAX_SIZE * sizeof(char));
     printf("Enter string:");
-    scanf("%s", str);
+    fgets(str, STR_MAX_SIZE, stdin);
     return str;
 }
 
-char **delete_el(char **arr, int index, int size)
+char **delete_el(char **arr, double index, double size)
 {
+    int index_cast = (int) index;
+    free(arr[index_cast]);
 
-    free(arr[index]);
-
-    for (int i = index; i < size - 1; i++)
+    for (int i = index_cast; i < size - 1; ++i)
     {
         arr[i] = arr[i + 1];
     }
 
-    arr[size - 1] = NULL;
+    arr[index_cast - 1] = NULL;
     return arr;
 }
 
@@ -74,7 +81,7 @@ char **insert_element(char **arr, int *size, int index, char *element)
     *size += 1;
     arr = realloc(arr, *size * sizeof(char *));
 
-    for (int i = *size - 1; i > index; i--)
+    for (int i = *size - 1; i > index; --i)
     {
         arr[i] = arr[i - 1];
     }
