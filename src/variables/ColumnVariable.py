@@ -17,8 +17,5 @@ class ColumnVariable(IterVariable):
     def get_value(self):
         return self.ptr
 
-    def get_element(self, index: int):
-        return self.ptr
-
-    def insert_element(self, value: int | str, index):
-        return self.builder.insert_value(self.ptr, value, index)
+    def copy_variable(self, builder):
+        return ColumnVariable(self, self.n_rows, self.n_cols, builder)

@@ -1,2 +1,2 @@
 column r = del(create_column(3, ["sd", "sdsd", "dfdf"]), 0);
-print(r);
+column b = copy(r);

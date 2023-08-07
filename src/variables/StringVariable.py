@@ -10,13 +10,13 @@ class StringVariable(Variable):
     basic_type: ir.Type = string
     convert_func: ir.Function
 
-    def __init__(self, value: str | CallInstr, builder: ir.builder.IRBuilder) -> None:
+    def __init__(self, value: str | CallInstr | Variable, builder: ir.builder.IRBuilder) -> None:
         if isinstance(value, CallInstr):
             self.builder = builder
             self.ptr = self.builder.alloca(self.basic_type)
             self.builder.store(value, self.ptr)
             self.ptr = self.builder.load(self.ptr)
-        else:
+        elif isinstance(value, str):
             if len(value) < MAX_STR_SIZE - 1:
                 value += " " * (MAX_STR_SIZE - 1 - len(value))
             value += '\0'
@@ -29,15 +29,13 @@ class StringVariable(Variable):
             self.ptr = self.builder.alloca(self.basic_type)
             self.builder.store(result, self.ptr)
             self.ptr = self.builder.load(self.ptr)
+        else:
+            self.var = self.builder.load(value.ptr)
+            self.ptr = self.builder.alloca(self.basic_type)
+            self.builder.store(self.var, self.ptr)
 
     def get_value(self):
         return self.ptr
 
-    def set_value(self, value: str):
-        value += '\0'
-        self.type = ir.ArrayType(ir.IntType(8), len(value))
-        self.var = ir.Constant(
-            ir.ArrayType(ir.IntType(8), len(value)),
-            bytearray(value.encode("utf8"))
-        )
-        self.compile_str_init()
+    def set_value(self, other_variable, builder):
+        return StringVariable(other_variable, builder)

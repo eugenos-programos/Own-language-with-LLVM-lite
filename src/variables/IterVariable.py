@@ -10,12 +10,19 @@ class IterVariable(Variable):
     basic_type = iter
     convert_func: ir.Function
 
-    def __init__(self, elements: tuple, size: NumbVariable, builder: ir.builder.IRBuilder, ptr=None) -> None:
+    def __init__(self, elements: tuple | object | ir.instructions.Instruction, size: NumbVariable, builder: ir.builder.IRBuilder, ptr=None) -> None:
         self.builder = builder
         self.size = NumbVariable(size, builder) if not isinstance(size, NumbVariable) else size
 
-        if not isinstance(elements, (list, tuple)):
+        if isinstance(elements, ir.instructions.Instruction):
             self.var = elements
+            self.ptr = self.builder.alloca(self.basic_type)
+            self.builder.store(elements, self.ptr)
+            self.ptr = self.builder.load(self.ptr)
+            return
+        
+        elif not isinstance(elements, (tuple, list)):
+            self.var = elements.var
             self.ptr = self.builder.alloca(self.basic_type)
             self.builder.store(elements, self.ptr)
             self.ptr = self.builder.load(self.ptr)
