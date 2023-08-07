@@ -17,14 +17,14 @@ class IterVariable(Variable):
         if isinstance(elements, ir.instructions.Instruction):
             self.var = elements
             self.ptr = self.builder.alloca(self.basic_type)
-            self.builder.store(elements, self.ptr)
+            self.builder.store(self.var, self.ptr)
             self.ptr = self.builder.load(self.ptr)
             return
         
         elif not isinstance(elements, (tuple, list)):
             self.var = elements.var
             self.ptr = self.builder.alloca(self.basic_type)
-            self.builder.store(elements, self.ptr)
+            self.builder.store(self.var, self.ptr)
             self.ptr = self.builder.load(self.ptr)
             return
 

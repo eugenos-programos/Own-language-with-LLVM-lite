@@ -18,4 +18,4 @@ class ColumnVariable(IterVariable):
         return self.ptr
 
     def copy_variable(self, builder):
-        return ColumnVariable(self, self.n_rows, self.n_cols, builder)
+        return ColumnVariable(self, self.size, builder)

@@ -584,6 +584,9 @@ class LangParserListener(ParseTreeListener):
                         ex) for ex in func_expr.custFuncCall().numbExpr()]
                     name = str(func_expr.custFuncCall().ID())
                     return self.program_compiler.call_custom_func(name, args)
+                elif func_expr.copyStmt():
+                    copy_stmt : LangParser.CopyStmtContext = func_expr.copyStmt()
+                    return self.program_compiler.call_function("copy", [self.global_vars[str(copy_stmt.ID())]])
             elif expr.indexStmt():
                 pass
         elif ctx.boolNumbSign():
