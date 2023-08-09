@@ -13,4 +13,4 @@ class RowVariable(IterVariable):
         self.ptr = value.ptr
 
     def copy_variable(self, builder):
-        return RowVariable(self, self.n_rows, self.n_cols, builder)
+        return RowVariable(self, self.size, builder)
