@@ -1,3 +1,0 @@
-column r = del(create_column(3, ["sd", "sdsd", "dfdf"]), 0);
-column b = copy(r);
-print(b);
