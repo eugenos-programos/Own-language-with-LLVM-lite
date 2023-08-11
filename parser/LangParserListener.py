@@ -266,8 +266,7 @@ class LangParserListener(ParseTreeListener):
         if isinstance(ctx, str) or ctx.ID():
             str_id = str(ctx.ID()) if not isinstance(ctx, str) else ctx
             if self.global_vars.get(str_id) is None:
-                raise SemanticAnalyzerException(
-                    "Variable {} is not defined".format(str_id))
+                raise SemanticAnalyzerException("Variable {} is not defined".format(str_id))
             var_obj = self.global_vars.get(str_id)
             if isinstance(var_obj, NumbVariable):
                 var_type = 'numb'
@@ -280,8 +279,7 @@ class LangParserListener(ParseTreeListener):
             elif isinstance(var_obj, TableVariable):
                 var_type = 'table'
             else:
-                raise TypeError(
-                    "Bro here is unknown object -- {} | {}".format(type(var_obj), str_id))
+                raise TypeError("Bro here is unknown object -- {} | {}".format(type(var_obj), str_id))
             return var_type, False
         elif isinstance(ctx, LangParser.BasicTypeContext) and ctx.NUMBER():
             return 'numb', False
@@ -416,8 +414,7 @@ class LangParserListener(ParseTreeListener):
                     f"Cannot initialize index stmt with specified type - {str(ctx.basicTypeName().children[0])}")
             for idx_stmt in ctx.indexStmt():
                 if idx_stmt.builtinFuncStmt():
-                    raise SemanticAnalyzerException(
-                        f"Function {str(idx_stmt.builtinFuncStmt().children[0].children[0])} only returns values")
+                    raise SemanticAnalyzerException(f"Function {str(idx_stmt.builtinFuncStmt().children[0].children[0])} only returns values")
                 self.findIndexStmtType(idx_stmt)
 
         elif ctx.ID():
@@ -432,8 +429,7 @@ class LangParserListener(ParseTreeListener):
             for var_name in ctx.ID():
                 var_names.append(str(var_name))
             if len(var_names) != len(set(var_names)):
-                raise SemanticAnalyzerException(
-                    f"Attempt to define variables with similar name")
+                raise SemanticAnalyzerException(f"Attempt to define variables with similar name")
             assign_exprs_n = 0
             for numb_expr in ctx.numbExpr():
                 if numb_expr.returnType() is not None:

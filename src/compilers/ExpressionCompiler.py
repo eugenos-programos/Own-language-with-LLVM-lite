@@ -1,6 +1,5 @@
-from src.variables import NumbVariable
+from src.variables import NumbVariable, Variable
 from llvmlite import ir
-from parser.LangParser import LangParser
 
 
 class ExpressionCompiler:
@@ -20,7 +19,7 @@ class ExpressionCompiler:
         builder.store(new_val, var.ptr)
         return var
     
-    def process_numb_expr(self, first_var, operation_sign: str, second_var):
+    def process_numb_expr(self, first_var: Variable, operation_sign: str, second_var: Variable):
         if isinstance(first_var, NumbVariable) and isinstance(second_var, NumbVariable):
             if operation_sign == '+':
                 return first_var + second_var
