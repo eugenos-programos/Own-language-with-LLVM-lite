@@ -27,8 +27,8 @@ class NumbVariable(Variable):
         return NumbVariable(self, builder) 
 
     def set_value(self, other_variable):
-        self.var = ir.Constant(self.type, value)
-        self.builder.store(self.var, self.ptr)
+        self.var = other_variable.var
+        self.ptr = other_variable.ptr
 
     def __add__(self, other_var) -> int:
         return NumbVariable(

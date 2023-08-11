@@ -12,3 +12,7 @@ class Variable(ABC):
     @abstractmethod
     def copy_variable():
         pass
+
+    @abstractmethod
+    def set_value():
+        pass

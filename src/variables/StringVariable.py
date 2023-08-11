@@ -36,6 +36,9 @@ class StringVariable(Variable):
 
     def get_value(self):
         return self.ptr
+    
+    def copy_variable(self, builder: ir.builder.IRBuilder):
+        return StringVariable(self, builder)
 
     def set_value(self, other_variable, builder):
         return StringVariable(other_variable, builder)
