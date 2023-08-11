@@ -8,7 +8,7 @@ from src.variables import *
 
 class FunctionCompiler:
 
-    def __init__(self, module) -> None:
+    def __init__(self, module: Module) -> None:
         self.module = module
         self._functions = {}
         self._load_builtin_functions()

@@ -1,8 +1,8 @@
 import llvmlite.ir as ir
 from parser.LangParser import LangParser
 from src.variables import *
-from src.FunctionCompiler import FunctionCompiler
-from src.ExpressionCompiler import ExpressionCompiler
+from .FunctionCompiler import FunctionCompiler
+from .ExpressionCompiler import ExpressionCompiler
 from src.configs import MAX_STR_SIZE
 from src.basic_types import *
 import time

@@ -4,7 +4,7 @@ if __name__ is not None and "." in __name__:
     from .LangParser import LangParser
 else:
     from LangParser import LangParser
-from src.ProgramCompiler import ProgramCompiler
+from src.compilers import ProgramCompiler
 from src.variables import *
 
 
