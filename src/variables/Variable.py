@@ -14,5 +14,5 @@ class Variable(ABC):
         pass
 
     @abstractmethod
-    def set_value():
+    def set_value(value):
         pass

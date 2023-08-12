@@ -498,10 +498,14 @@ class LangParserListener(ParseTreeListener):
             else:
                 if ctx.ID(0):
                     for idx, var_name in enumerate(var_names):
-                        self.changeVarValue(var_name, assign_results[idx])
+                        self.changeVarValue(var_name, str(ctx.assignSign().children[0]), assign_results[idx])
 
-    def changeVarValue(self, str_name: str, value):
-        self.global_vars.get(str_name).set_value(value)
+    def changeVarValue(self, str_name: str, ass_sign: str, value: Variable):
+        self.program_compiler.assign_value(
+            self.global_vars.get(str_name),
+            ass_sign,
+            value
+        )
 
     def addNewVariable(self, str_name: str, var_type: str, value):
         if self.function_vars.get(str_name):
