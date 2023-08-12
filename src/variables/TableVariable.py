@@ -6,8 +6,8 @@ from .NumbVariable import NumbVariable
 
 class TableVariable(IterVariable):
 
-    def __init__(self, elements: tuple, n_rows: NumbVariable, n_cols: NumbVariable, builder: ir.builder.IRBuilder, ptr=None) -> None:
-        super().__init__(elements, n_cols * n_rows, builder, ptr)
+    def __init__(self, elements: tuple, n_rows: NumbVariable, n_cols: NumbVariable, builder: ir.builder.IRBuilder) -> None:
+        super().__init__(elements, n_cols * n_rows, builder)
 
         self.n_rows = n_rows
         self.n_cols = n_cols
@@ -19,9 +19,5 @@ class TableVariable(IterVariable):
         self.var = value.var
         self.compile_init()
 
-    def get_element(self, index: int):
-        val = self.builder.extract_value(self.table_ptr, index)
-        return val
-
-    def insert_element(self, value: int | str, index):
-        return self.builder.insert_value(self.table_ptr, value, index)
+    def copy_variable(self, builder):
+        return TableVariable(self, self.n_rows, self.n_cols, builder)

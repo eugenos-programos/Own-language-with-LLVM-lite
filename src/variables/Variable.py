@@ -8,3 +8,11 @@ class Variable(ABC):
     @abstractmethod
     def get_value():
         pass
+
+    @abstractmethod
+    def copy_variable():
+        pass
+
+    @abstractmethod
+    def set_value(value):
+        pass

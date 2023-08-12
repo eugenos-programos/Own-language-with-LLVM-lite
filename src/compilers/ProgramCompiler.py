@@ -1,8 +1,9 @@
 import llvmlite.ir as ir
 from parser.LangParser import LangParser
 from src.variables import *
-from src.FunctionCompiler import FunctionCompiler
-from src.ExpressionCompiler import ExpressionCompiler
+from .FunctionCompiler import FunctionCompiler
+from .ExpressionCompiler import ExpressionCompiler
+from .AssignExpressionCompiler import AssignExpressionCompiler
 from src.configs import MAX_STR_SIZE
 from src.basic_types import *
 import time
@@ -17,6 +18,7 @@ class ProgramCompiler:
         self._builtin_funcs = {}
         self.function_compiler = FunctionCompiler(self._module)
         self.expression_compiler = ExpressionCompiler()
+        self.assign_expression_compiler = AssignExpressionCompiler(self._module)
         self.local_function = None
         self._main_func = None
 
@@ -36,10 +38,8 @@ class ProgramCompiler:
 
     def start_main_func(self):
         main_type = ir.FunctionType(ir.IntType(32), [])
-        self._main_func = ir.Function(
-            self._module, main_type, name='run_llvmlite_compiler')
-        self._builder = ir.IRBuilder(
-            self._main_func.append_basic_block(name='entry'))
+        self._main_func = ir.Function(self._module, main_type, name='run_llvmlite_compiler')
+        self._builder = ir.IRBuilder(self._main_func.append_basic_block(name='entry'))
     
     def is_main_function_started(self):
         return self._main_func is not None
@@ -118,3 +118,8 @@ class ProgramCompiler:
             case _:
                 raise ValueError("Unknown type - {}".format(type))
         return result_type
+    
+    def assign_value(self, variable: Variable, assign_sign: str, value: Variable) -> None:
+        if type(variable) != type(value):
+            raise TypeError("Different type of assign value")
+        self.assign_expression_compiler.compile_assign_expr(variable, assign_sign, value)

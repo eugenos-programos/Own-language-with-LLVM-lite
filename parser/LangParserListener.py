@@ -4,7 +4,7 @@ if __name__ is not None and "." in __name__:
     from .LangParser import LangParser
 else:
     from LangParser import LangParser
-from src.ProgramCompiler import ProgramCompiler
+from src.compilers import ProgramCompiler
 from src.variables import *
 
 
@@ -266,8 +266,7 @@ class LangParserListener(ParseTreeListener):
         if isinstance(ctx, str) or ctx.ID():
             str_id = str(ctx.ID()) if not isinstance(ctx, str) else ctx
             if self.global_vars.get(str_id) is None:
-                raise SemanticAnalyzerException(
-                    "Variable {} is not defined".format(str_id))
+                raise SemanticAnalyzerException("Variable {} is not defined".format(str_id))
             var_obj = self.global_vars.get(str_id)
             if isinstance(var_obj, NumbVariable):
                 var_type = 'numb'
@@ -280,8 +279,7 @@ class LangParserListener(ParseTreeListener):
             elif isinstance(var_obj, TableVariable):
                 var_type = 'table'
             else:
-                raise TypeError(
-                    "Bro here is unknown object -- {} | {}".format(type(var_obj), str_id))
+                raise TypeError("Bro here is unknown object -- {} | {}".format(type(var_obj), str_id))
             return var_type, False
         elif isinstance(ctx, LangParser.BasicTypeContext) and ctx.NUMBER():
             return 'numb', False
@@ -416,8 +414,7 @@ class LangParserListener(ParseTreeListener):
                     f"Cannot initialize index stmt with specified type - {str(ctx.basicTypeName().children[0])}")
             for idx_stmt in ctx.indexStmt():
                 if idx_stmt.builtinFuncStmt():
-                    raise SemanticAnalyzerException(
-                        f"Function {str(idx_stmt.builtinFuncStmt().children[0].children[0])} only returns values")
+                    raise SemanticAnalyzerException(f"Function {str(idx_stmt.builtinFuncStmt().children[0].children[0])} only returns values")
                 self.findIndexStmtType(idx_stmt)
 
         elif ctx.ID():
@@ -432,8 +429,7 @@ class LangParserListener(ParseTreeListener):
             for var_name in ctx.ID():
                 var_names.append(str(var_name))
             if len(var_names) != len(set(var_names)):
-                raise SemanticAnalyzerException(
-                    f"Attempt to define variables with similar name")
+                raise SemanticAnalyzerException(f"Attempt to define variables with similar name")
             assign_exprs_n = 0
             for numb_expr in ctx.numbExpr():
                 if numb_expr.returnType() is not None:
@@ -502,10 +498,14 @@ class LangParserListener(ParseTreeListener):
             else:
                 if ctx.ID(0):
                     for idx, var_name in enumerate(var_names):
-                        self.changeVarValue(var_name, assign_results[idx])
+                        self.changeVarValue(var_name, str(ctx.assignSign().children[0]), assign_results[idx])
 
-    def changeVarValue(self, str_name: str, value):
-        self.global_vars.get(str_name).set_value(value)
+    def changeVarValue(self, str_name: str, ass_sign: str, value: Variable):
+        self.program_compiler.assign_value(
+            self.global_vars.get(str_name),
+            ass_sign,
+            value
+        )
 
     def addNewVariable(self, str_name: str, var_type: str, value):
         if self.function_vars.get(str_name):
@@ -584,6 +584,9 @@ class LangParserListener(ParseTreeListener):
                         ex) for ex in func_expr.custFuncCall().numbExpr()]
                     name = str(func_expr.custFuncCall().ID())
                     return self.program_compiler.call_custom_func(name, args)
+                elif func_expr.copyStmt():
+                    copy_stmt : LangParser.CopyStmtContext = func_expr.copyStmt()
+                    return self.program_compiler.call_function("copy", [self.global_vars[str(copy_stmt.ID())]])
             elif expr.indexStmt():
                 pass
         elif ctx.boolNumbSign():

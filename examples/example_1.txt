@@ -1,8 +1,0 @@
-numb function mean(row row1)
-{
-    numb sum = 13.4534;
-    return sum;
-}
-
-row row1 = create_row(3, ["34", "45", "45"]);
-print(mean(row1));

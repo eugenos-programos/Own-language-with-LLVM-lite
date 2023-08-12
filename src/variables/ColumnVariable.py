@@ -7,18 +7,6 @@ class ColumnVariable(IterVariable):
 
     def __init__(self, elements: tuple, size: NumbVariable, builder: ir.builder.IRBuilder, ptr=None) -> None:
         super().__init__(elements, size, builder, ptr)
-
-    def set_value(self, value):
-        self.size = value.size
-        self.type = value.type
-        self.var = value.var
-        self.compile_init()
-
-    def get_value(self):
-        return self.ptr
-
-    def get_element(self, index: int):
-        return self.ptr
-
-    def insert_element(self, value: int | str, index):
-        return self.builder.insert_value(self.ptr, value, index)
+        
+    def copy_variable(self, builder):
+        return ColumnVariable(self, self.size, builder)

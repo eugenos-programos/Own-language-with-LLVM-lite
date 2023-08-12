@@ -8,14 +8,15 @@ from src.variables import *
 
 class FunctionCompiler:
 
-    def __init__(self, module) -> None:
+    def __init__(self, module: Module) -> None:
         self.module = module
         self._functions = {}
         self._load_builtin_functions()
         self._call_function_map = {
             "print": self.call_print_func,
             "length": self.call_length_func,
-            "del": self.call_del_func
+            "del": self.call_del_func,
+            "copy": self.call_copy_func
         }
         StringVariable.convert_func = self._functions["toDynamicStr"]
         IterVariable.convert_func = self._functions["toDynamic2"]
@@ -91,4 +92,8 @@ class FunctionCompiler:
     
     def call_del_func(self, builder: ir.builder.IRBuilder, arg1: RowVariable | ColumnVariable, arg2: NumbVariable):
         return self._functions["delete_el"](builder, arg1, arg2, arg1.size, result_size=arg1.size - NumbVariable(1, builder))
+    
+    def call_copy_func(self, builder, arg1: Variable):
+        return arg1.copy_variable(builder)
+
     

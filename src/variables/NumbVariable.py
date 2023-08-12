@@ -1,4 +1,3 @@
-from typing import Any
 from llvmlite import ir
 from .Variable import Variable
 
@@ -6,30 +5,30 @@ from .Variable import Variable
 class NumbVariable(Variable):
     basic_type = ir.DoubleType()
 
-    def __init__(self, value: float | ir.PointerType, builder: ir.builder.IRBuilder) -> None:
+    def __init__(self, value: float | Variable | ir.instructions.Instruction, builder: ir.builder.IRBuilder) -> None:
+        self.builder = builder
         value = float(value) if isinstance(value, int) else value
         if isinstance(value, float):
             self.var = ir.Constant(
                 self.basic_type,
                 value
             )
-            self.raw_var = value
-        else:
+        elif isinstance(value, ir.instructions.Instruction):
             self.var = value
-        self.builder = builder
-        self.compile_numb_init()
-
-    def compile_numb_init(self):
+        else:
+            self.var = self.builder.load(value.ptr)
         self.ptr = self.builder.alloca(self.basic_type)
         self.builder.store(self.var, self.ptr)
 
     def get_value(self):
-        value = self.builder.load(self.ptr)
-        return value
+        return self.builder.load(self.ptr)
 
-    def set_value(self, value: int):
-        self.var = ir.Constant(self.type, value)
-        self.builder.store(self.var, self.ptr)
+    def copy_variable(self, builder: ir.builder.IRBuilder):
+        return NumbVariable(self, builder) 
+
+    def set_value(self, other_variable):
+        self.var = other_variable.var
+        self.ptr = other_variable.ptr
 
     def __add__(self, other_var) -> int:
         return NumbVariable(
