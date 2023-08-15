@@ -549,7 +549,9 @@ class LangParserListener(ParseTreeListener):
                         else self.program_compiler.create_column(elements)
                     return var
                 elif func_expr.readStrStmt():
-                    return self.program_compiler.call_function("read_string")
+                    return self.program_compiler.call_function(
+                        "read_string"
+                    )
                 elif func_expr.delFuncStmt():
                     return self.program_compiler.call_function(
                         "del", 

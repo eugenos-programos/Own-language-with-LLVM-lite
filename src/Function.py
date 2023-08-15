@@ -38,4 +38,5 @@ class Function:
     def __call__(self, builder: ir.builder, *args, **kwargs) -> Any:
         raw_args = [arg.get_value() for arg in args]
         function_result = builder.call(self._function, raw_args)
-        return self._save_function_result(function_result, builder, kwargs.get("result_size"), type(args[0]))
+        return_type_opt = type(args[0]) if args else None
+        return self._save_function_result(function_result, builder, kwargs.get("result_size"), return_type_opt)
