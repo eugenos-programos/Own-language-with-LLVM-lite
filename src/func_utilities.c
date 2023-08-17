@@ -76,23 +76,28 @@ char **delete_el(char **arr, double index, double size)
 }
 
 
-char **reshape(char ** table, int nrows_before, int ncols_before, int nrows_after, int ncols_after)
+char **reshape(char ** table, double nrows_before, double ncols_before, double nrows_after, double ncols_after)
 {
     int prev_size = ncols_before * nrows_before;
     int new_size = ncols_after * nrows_after;
     char ** new_table = malloc(new_size * sizeof(char *));
+    for (int i = 0; i < new_size; ++i)  new_table[i] = malloc(STR_MAX_SIZE * sizeof(char));
     if (prev_size <= new_size)
     {
         for (int i = 0; i < prev_size; ++i)
         {
-            strncpy(new_table[i], table[i], STR_MAX_SIZE);
+            strcpy(new_table[i], table[i]);
+        }
+        for (int i = prev_size; i < new_size - prev_size; ++i)
+        {
+            new_table[i] = malloc(STR_MAX_SIZE * sizeof(char));
         }
     }
     else
     {
         for (int i = 0; i < new_size; ++i)
         {
-            strncpy(new_table[i], table[i], STR_MAX_SIZE);
+            strcpy(new_table[i], table[i]);
         }
     }
     return new_table;
