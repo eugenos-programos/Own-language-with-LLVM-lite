@@ -589,6 +589,8 @@ class LangParserListener(ParseTreeListener):
                 elif func_expr.copyStmt():
                     copy_stmt : LangParser.CopyStmtContext = func_expr.copyStmt()
                     return self.program_compiler.call_function("copy", [self.global_vars[str(copy_stmt.ID())]])
+                elif func_expr.reshapeStmt():
+                    exit(1)
             elif expr.indexStmt():
                 pass
         elif ctx.boolNumbSign():
@@ -606,10 +608,16 @@ class LangParserListener(ParseTreeListener):
         return self.program_compiler.call_function("length", [var])
 
     def findreshapeStmtCtxtRes(self, ctx: LangParser.ReshapeStmtContext):
-        arg1 = self.findNumbExprResult(ctx.numbExpr(0))
+        arg1: TableVariable = self.findNumbExprResult(ctx.numbExpr(0))
         arg2 = self.findNumbExprResult(ctx.numbExpr(1))
         arg3 = self.findNumbExprResult(ctx.numbExpr(2))
-        return self.program_compiler.call_reshape_func(arg1, int(arg2), int(arg3))
+        return self.program_compiler.call_function("reshape", [
+            arg1,
+            arg1.n_rows,
+            arg1.n_cols,
+            arg2,
+            arg3
+        ], result_size=(arg2, arg3))
 
     def findExprResultWithTwoOperands(self, nexprctx1: LangParser.NumbExprContext,
                                       type1: str,

@@ -76,8 +76,8 @@ class ProgramCompiler:
     def find_expression_result(self, first_variable, operation_sign: str, second_variable):
         return self.expression_compiler.process_numb_expr(first_variable, operation_sign, second_variable)
     
-    def call_function(self, name: str, args: list = []):
-        return self.function_compiler.call_function(name, args, self._builder)
+    def call_function(self, name: str, args: list = [], **kwargs):
+        return self.function_compiler.call_function(name, args, self._builder, **kwargs)
 
     def create_empty_var_by_type(self, type: ir.Type):
         if type == 'numb':

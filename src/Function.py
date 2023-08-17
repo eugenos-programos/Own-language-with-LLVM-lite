@@ -15,7 +15,7 @@ class Function:
         )
         self._is_convert_func = "toDynamic" in name   # if function is used for dynamic converting -> return raw alloca inst
 
-    def _save_function_result(self, func_res: ir.AllocaInstr, builder: ir.builder, result_size: int | list, first_arg_type: Variable) -> Variable | ir.AllocaInstr:
+    def _save_function_result(self, func_res: ir.AllocaInstr, builder: ir.builder, result_size: int | tuple, first_arg_type: Variable) -> Variable | ir.AllocaInstr:
         if self._is_convert_func:
             return func_res
         if self._return_type == VoidVariable:

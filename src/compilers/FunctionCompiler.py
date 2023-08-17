@@ -31,7 +31,8 @@ class FunctionCompiler:
             [TableVariable, [iter, number, number, iter, number, number], "mul_tables", False],
             [[RowVariable, ColumnVariable, TableVariable], [number, ir.ArrayType(ir.ArrayType(i8, MAX_STR_SIZE), MAX_ARR_SIZE).as_pointer()], "toDynamic2", False],
             [StringVariable, [ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()], "toDynamicStr", False],
-            [[RowVariable, ColumnVariable], [iter, number, number], "delete_el", False]
+            [[RowVariable, ColumnVariable], [iter, number, number], "delete_el", False],
+            [TableVariable, [iter, number, number, number, number], "reshape", False]
         ]
         for func_params in function_parameters:
             self._save_func_to_dict(*func_params)
@@ -52,10 +53,10 @@ class FunctionCompiler:
     def get_function_by_name(self, name: str) -> ir.Function:
         return self._functions.get(name)
 
-    def call_function(self, name: str, args: list, builder: ir.builder.IRBuilder):
+    def call_function(self, name: str, args: list, builder: ir.builder.IRBuilder, **kwargs):
         call_function_var = self._call_function_map[name] if self._call_function_map.get(name) is not None \
                                                           else self._functions[name]
-        return call_function_var(builder, *args)
+        return call_function_var(builder, *args, **kwargs)
 
     def call_mult_tables_function(self, builder: ir.builder.IRBuilder, first_table: TableVariable, second_table: TableVariable):
         if first_table.n_rows != second_table.n_rows:
