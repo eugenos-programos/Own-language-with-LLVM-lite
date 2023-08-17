@@ -103,6 +103,22 @@ char **reshape(char ** table, double nrows_before, double ncols_before, double n
     return new_table;
 }
 
+char ** del(char ** arr, double index, double size)
+{
+    char ** new_arr = malloc((size - 1) * sizeof(char));
+    for (int i = 0; i < index; ++i)
+    {
+        new_arr[i] = malloc(STR_MAX_SIZE * sizeof(char));
+        strcpy(new_arr[i], arr[i]);
+    } 
+    for (int i = index + 1; i < size - 1; ++i)
+    {
+        new_arr[i] = malloc(STR_MAX_SIZE * sizeof(char));
+        strcpy(new_arr[i], arr[i]);
+    } 
+    return new_arr;
+}
+
 char **insert_element(char **arr, int *size, int index, char *element)
 {
 
