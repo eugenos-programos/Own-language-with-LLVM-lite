@@ -21,6 +21,11 @@ class ProgramCompiler:
         self.assign_expression_compiler = AssignExpressionCompiler(self._module)
         self.local_function = None
         self._main_func = None
+        self._llvm_type_to_var_type_map = {
+            number: NumbVariable,
+            iter: IterVariable,
+            string: StringVariable
+        }
 
     def finish_compiling(self, file_name='ir_program.ll'):
         self.finish_main_func()
@@ -48,22 +53,36 @@ class ProgramCompiler:
         if self._builder is not None:
             self._builder.ret(ir.Constant(ir.IntType(32), 0))
 
-    def start_local_function(self, func_name, return_type, arg_types):
+    def create_var_by_type(self, type: str):
+        if type == 'numb':
+            return NumbVariable(1, self._builder)
+        elif type == 'string':
+            return StringVariable("", self._builder)
+        elif type == 'row':
+            return RowVariable([], 0, self._builder)
+        elif type == 'column':
+            return ColumnVariable([], 0, self._builder)
+        elif type == 'table':
+            return TableVariable([], 0, self._builder)
+        else:
+            raise ValueError("Unkown type - {}".format(type))
+
+    def start_local_function(self, func_name: str, return_type: str, arg_types: list):
         if self.local_function is not None:
             return
-        type_ = self.convert_type(return_type)
-        converted_types = [self.convert_type(
-            arg_type) for arg_type in arg_types]
-        func_type = ir.FunctionType(
-            type_, converted_types)
-        self.local_function = ir.Function(
-            self.module, func_type, name=func_name)
-        self._builder = ir.builder.IRBuilder(
-            self.local_function.append_basic_block(name='entry'))
-        self.builtin_funcs[func_name] = (
-            self.local_function, return_type, arg_types)
-        self.local_func_args = [self.create_var_by_type(
-            arg_type) for arg_type in arg_types]
+        
+        return_type = self.convert_type(return_type)
+        converted_arg_types = tuple(map(self.convert_type, arg_types))
+        
+        self.function_compiler.add_function(
+            self._llvm_type_to_var_type_map[return_type],
+            converted_arg_types,
+            func_name
+        )
+
+        self.local_function = self.function_compiler.get_function_by_name(func_name)
+        self._builder = ir.builder.IRBuilder(self.local_function.get_row_function_var().append_basic_block(name='entry'))
+        self.local_func_args = [self.create_var_by_type(arg_type) for arg_type in arg_types]
 
     def finish_local_function(self, return_const: ir.Constant = None):
         self._builder.ret(return_const.var)
@@ -78,20 +97,6 @@ class ProgramCompiler:
     
     def call_function(self, name: str, args: list = [], **kwargs):
         return self.function_compiler.call_function(name, args, self._builder, **kwargs)
-
-    def create_empty_var_by_type(self, type: ir.Type):
-        if type == 'numb':
-            return NumbVariable(1, self._builder)
-        elif type == 'string':
-            return StringVariable("", self._builder)
-        elif type == 'row':
-            return RowVariable([], self._builder)
-        elif type == 'column':
-            return ColumnVariable([], self._builder)
-        elif type == 'table':
-            return TableVariable([], self._builder)
-        else:
-            raise ValueError("Unkown type - {}".format(type))
 
     def create_table(self, elements, n_col, n_row):
         return TableVariable(elements, NumbVariable(n_row, self._builder), NumbVariable(n_col, self._builder), self._builder)

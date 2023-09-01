@@ -36,9 +36,9 @@ class FunctionCompiler:
             [NumbVariable, [iter, number, string], "find", False]
         ]
         for func_params in function_parameters:
-            self._save_func_to_dict(*func_params)
+            self.add_function(*func_params)
 
-    def _save_func_to_dict(self, return_var: Variable, arg_types: list, name: str, var_arg: bool = False):
+    def add_function(self, return_var: Variable, arg_types: list, name: str, var_arg: bool = False):
         function = Function(
             self.module,
             ir.FunctionType(
@@ -51,7 +51,7 @@ class FunctionCompiler:
         )
         self._functions[name] = function
 
-    def get_function_by_name(self, name: str) -> ir.Function:
+    def get_function_by_name(self, name: str) -> Function:
         return self._functions.get(name)
 
     def call_function(self, name: str, args: list, builder: ir.builder.IRBuilder, **kwargs):

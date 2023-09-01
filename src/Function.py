@@ -1,4 +1,4 @@
-from typing import Any, Sequence, Union
+from typing import Any, Sequence
 from llvmlite import ir
 from src.variables import *
 
@@ -14,6 +14,9 @@ class Function:
             name
         )
         self._is_convert_func = "toDynamic" in name   # if function is used for dynamic converting -> return raw alloca inst
+
+    def get_row_function_var(self) -> ir.Function:
+        return self._function
 
     def _save_function_result(self, func_res: ir.AllocaInstr, builder: ir.builder, result_size: int | tuple, first_arg_type: Variable) -> Variable | ir.AllocaInstr:
         if self._is_convert_func:
