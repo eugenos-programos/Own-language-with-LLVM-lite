@@ -53,17 +53,17 @@ class ProgramCompiler:
         if self._builder is not None:
             self._builder.ret(ir.Constant(ir.IntType(32), 0))
 
-    def create_var_by_type(self, type: str):
+    def create_var_by_type(self, type: str, value):
         if type == 'numb':
-            return NumbVariable(1, self._builder)
+            return NumbVariable(value, self._builder)
         elif type == 'string':
-            return StringVariable("", self._builder)
+            return StringVariable(value, self._builder)
         elif type == 'row':
-            return RowVariable([], 0, self._builder)
+            return RowVariable(value, 3, self._builder)
         elif type == 'column':
-            return ColumnVariable([], 0, self._builder)
+            return ColumnVariable(value, 3, self._builder)
         elif type == 'table':
-            return TableVariable([], 0, self._builder)
+            return TableVariable(value, 3, self._builder)
         else:
             raise ValueError("Unkown type - {}".format(type))
 
@@ -82,7 +82,7 @@ class ProgramCompiler:
 
         self.local_function = self.function_compiler.get_function_by_name(func_name)
         self._builder = ir.builder.IRBuilder(self.local_function.get_row_function_var().append_basic_block(name='entry'))
-        self.local_func_args = [self.create_var_by_type(arg_type) for arg_type in arg_types]
+        self.local_func_args = [self.create_var_by_type(arg_type, self.local_function.get_row_function_var().args[idx]) for idx, arg_type in enumerate(arg_types)]
 
     def finish_local_function(self, return_const: ir.Constant = None):
         self._builder.ret(return_const.var)

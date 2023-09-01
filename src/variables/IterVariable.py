@@ -14,7 +14,7 @@ class IterVariable(Variable):
         self.builder = builder
         self.size = NumbVariable(size, builder) if not isinstance(size, NumbVariable) else size
 
-        if isinstance(elements, ir.instructions.Instruction):
+        if isinstance(elements, (ir.instructions.Instruction, ir.Argument)):
             self.var = elements
             self.ptr = self.builder.alloca(self.basic_type)
             self.builder.store(self.var, self.ptr)
