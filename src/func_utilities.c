@@ -135,16 +135,15 @@ char **insert_element(char **arr, int *size, int index, char *element)
     return arr;
 }
 
-int find_string_index(const char **arr, int size, char *target)
+double find(char **arr, double size, char *target)
 {
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < size; ++i)
     {
         if (strcmp(arr[i], target) == 0)
         {
             return i;
         }
     }
-
     return -1;
 }
 

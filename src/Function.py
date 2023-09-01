@@ -26,6 +26,8 @@ class Function:
             return TableVariable(func_res, *result_size, builder)
         elif self._return_type == IterVariable:
             return IterVariable(func_res, result_size, builder)
+        elif self._return_type == NumbVariable:
+            return NumbVariable(func_res, builder)
         elif isinstance(self._return_type, list):
             if first_arg_type not in [RowVariable, ColumnVariable, TableVariable]:
                 raise ValueError(f"Arg type - {first_arg_type}")
@@ -33,6 +35,8 @@ class Function:
                 return first_arg_type(func_res, result_size, builder)
             else:
                 return first_arg_type(func_res, *result_size, builder)
+        else:
+            raise TypeError(f"Uknown return type - {self._return_type}")
 
 
     def __call__(self, builder: ir.builder, *args, **kwargs) -> Any:

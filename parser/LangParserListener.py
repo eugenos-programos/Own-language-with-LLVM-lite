@@ -405,9 +405,6 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#assignExpr.
     def exitAssignExpr(self, ctx: LangParser.AssignExprContext):
-        if ctx.ID() and ctx.indexStmt():
-            raise SemanticAnalyzerException(
-                "Cannot initialize variables and index statements in one assign expression")
         if ctx.indexStmt():
             if ctx.basicTypeName():
                 raise SemanticAnalyzerException(
@@ -591,6 +588,14 @@ class LangParserListener(ParseTreeListener):
                     return self.program_compiler.call_function("copy", [self.global_vars[str(copy_stmt.ID())]])
                 elif func_expr.reshapeStmt():
                     exit(1)
+                elif func_expr.findStmt():
+                    arg0, arg1 = tuple(
+                        map(
+                            self.findNumbExprResult,
+                            func_expr.findStmt().numbExpr()
+                        )
+                    )
+                    return self.program_compiler.call_function("find", [arg0, arg0.size, arg1])
             elif expr.indexStmt():
                 pass
         elif ctx.boolNumbSign():

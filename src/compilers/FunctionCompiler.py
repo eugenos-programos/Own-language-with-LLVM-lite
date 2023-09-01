@@ -32,7 +32,8 @@ class FunctionCompiler:
             [[RowVariable, ColumnVariable, TableVariable], [number, ir.ArrayType(ir.ArrayType(i8, MAX_STR_SIZE), MAX_ARR_SIZE).as_pointer()], "toDynamic2", False],
             [StringVariable, [ir.ArrayType(ir.IntType(8), MAX_STR_SIZE).as_pointer()], "toDynamicStr", False],
             [[RowVariable, ColumnVariable], [iter, number, number], "delete_el", False],
-            [TableVariable, [iter, number, number, number, number], "reshape", False]
+            [TableVariable, [iter, number, number, number, number], "reshape", False],
+            [NumbVariable, [iter, number, string], "find", False]
         ]
         for func_params in function_parameters:
             self._save_func_to_dict(*func_params)
@@ -82,6 +83,8 @@ class FunctionCompiler:
             return self._functions["print_row_or_column"](builder, variable, variable.size, is_column)
         elif isinstance(variable, TableVariable):
             return self._functions["print_table"](builder, variable, variable.n_rows, variable.n_cols)
+        else:
+            raise TypeError(f"Uknown printf argument type - {type(variable)}")
 
     def call_length_func(self, builder: ir.builder.IRBuilder, variable: IterVariable) -> NumbVariable:
         return variable.size
