@@ -1,4 +1,4 @@
-from typing import Any, Sequence, Union
+from typing import Any, Sequence
 from llvmlite import ir
 from src.variables import *
 
@@ -15,7 +15,10 @@ class Function:
         )
         self._is_convert_func = "toDynamic" in name   # if function is used for dynamic converting -> return raw alloca inst
 
-    def _save_function_result(self, func_res: ir.AllocaInstr, builder: ir.builder, result_size: int | list, first_arg_type: Variable) -> Variable | ir.AllocaInstr:
+    def get_row_function_var(self) -> ir.Function:
+        return self._function
+
+    def _save_function_result(self, func_res: ir.AllocaInstr, builder: ir.builder, result_size: int | tuple, first_arg_type: Variable) -> Variable | ir.AllocaInstr:
         if self._is_convert_func:
             return func_res
         if self._return_type == VoidVariable:
@@ -26,6 +29,8 @@ class Function:
             return TableVariable(func_res, *result_size, builder)
         elif self._return_type == IterVariable:
             return IterVariable(func_res, result_size, builder)
+        elif self._return_type == NumbVariable:
+            return NumbVariable(func_res, builder)
         elif isinstance(self._return_type, list):
             if first_arg_type not in [RowVariable, ColumnVariable, TableVariable]:
                 raise ValueError(f"Arg type - {first_arg_type}")
@@ -33,9 +38,12 @@ class Function:
                 return first_arg_type(func_res, result_size, builder)
             else:
                 return first_arg_type(func_res, *result_size, builder)
+        else:
+            raise TypeError(f"Uknown return type - {self._return_type}")
 
 
     def __call__(self, builder: ir.builder, *args, **kwargs) -> Any:
         raw_args = [arg.get_value() for arg in args]
         function_result = builder.call(self._function, raw_args)
-        return self._save_function_result(function_result, builder, kwargs.get("result_size"), type(args[0]))
+        return_type_opt = type(args[0]) if args else None
+        return self._save_function_result(function_result, builder, kwargs.get("result_size"), return_type_opt)

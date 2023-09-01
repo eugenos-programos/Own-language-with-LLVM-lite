@@ -75,6 +75,50 @@ char **delete_el(char **arr, double index, double size)
     return arr;
 }
 
+
+char **reshape(char ** table, double nrows_before, double ncols_before, double nrows_after, double ncols_after)
+{
+    int prev_size = ncols_before * nrows_before;
+    int new_size = ncols_after * nrows_after;
+    char ** new_table = malloc(new_size * sizeof(char *));
+    for (int i = 0; i < new_size; ++i)  new_table[i] = malloc(STR_MAX_SIZE * sizeof(char));
+    if (prev_size <= new_size)
+    {
+        for (int i = 0; i < prev_size; ++i)
+        {
+            strcpy(new_table[i], table[i]);
+        }
+        for (int i = prev_size; i < new_size - prev_size; ++i)
+        {
+            new_table[i] = malloc(STR_MAX_SIZE * sizeof(char));
+        }
+    }
+    else
+    {
+        for (int i = 0; i < new_size; ++i)
+        {
+            strcpy(new_table[i], table[i]);
+        }
+    }
+    return new_table;
+}
+
+char ** del(char ** arr, double index, double size)
+{
+    char ** new_arr = malloc((size - 1) * sizeof(char));
+    for (int i = 0; i < index; ++i)
+    {
+        new_arr[i] = malloc(STR_MAX_SIZE * sizeof(char));
+        strcpy(new_arr[i], arr[i]);
+    } 
+    for (int i = index + 1; i < size - 1; ++i)
+    {
+        new_arr[i] = malloc(STR_MAX_SIZE * sizeof(char));
+        strcpy(new_arr[i], arr[i]);
+    } 
+    return new_arr;
+}
+
 char **insert_element(char **arr, int *size, int index, char *element)
 {
 
@@ -91,16 +135,15 @@ char **insert_element(char **arr, int *size, int index, char *element)
     return arr;
 }
 
-int find_string_index(const char **arr, int size, char *target)
+double find(char **arr, double size, char *target)
 {
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < size; ++i)
     {
         if (strcmp(arr[i], target) == 0)
         {
             return i;
         }
     }
-
     return -1;
 }
 

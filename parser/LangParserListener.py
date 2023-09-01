@@ -113,7 +113,7 @@ class LangParserListener(ParseTreeListener):
             self.global_vars.pop(func_param)
         self.is_func_init = False
         if self.program_compiler.local_function is not None:
-            self.program_compiler.end_local_func()
+            self.program_compiler.finish_local_function()
 
     def checkAndInitUserFunc(self, ctx: LangParser.FuncContext):
         func_type = str(ctx.children[0].children[0]) if str(
@@ -124,8 +124,7 @@ class LangParserListener(ParseTreeListener):
         func_params = list(map(str, ctx.ID()[1:]))
         func_params_types = list(map(lambda ctx: str(
             ctx.children[0]), ctx.basicTypeName()[int(func_type != 'void'):]))
-        self.program_compiler.start_local_func(
-            func_name, func_type, func_params_types)
+        self.program_compiler.start_local_function(func_name, func_type, func_params_types)
 
         if self.function_vars.get(func_name) is not None and self.function_vars.get(func_name).get("params") == func_params_types and\
                 func_type == self.function_vars.get(func_name).get("return_type"):
@@ -144,8 +143,7 @@ class LangParserListener(ParseTreeListener):
             self.addNewVariable(
                 func_param, func_params_types[func_index], self.program_compiler.local_func_args[func_index])
 
-        self.function_vars[func_name] = self.local_func_params = get_dict(
-            func_params_types, func_type, func_params)
+        self.function_vars[func_name] = self.local_func_params = get_dict(func_params_types, func_type, func_params)
         self.is_func_init = True
 
     # Enter a parse tree produced by LangParser#stat.
@@ -192,8 +190,7 @@ class LangParserListener(ParseTreeListener):
             if return_type != self.local_func_params.get('return_type'):
                 raise SemanticAnalyzerException(
                     f"{self.local_func_params.get('return_type')} function returns {return_type} object")
-            self.program_compiler.end_local_func(
-                self.findNumbExprResult(ctx.returnStmt().numbExpr()))
+            self.program_compiler.finish_local_function(self.findNumbExprResult(ctx.returnStmt().numbExpr()))
         elif ctx.stat() and ((ctx.stat().assignExpr() and ctx.stat().assignExpr().basicTypeName()) or ctx.stat().varDeclStmt() is not None):
             ass_ctxt = ctx.stat().assignExpr() if ctx.stat(
             ).assignExpr() else ctx.stat().varDeclStmt()
@@ -405,9 +402,6 @@ class LangParserListener(ParseTreeListener):
 
     # Exit a parse tree produced by LangParser#assignExpr.
     def exitAssignExpr(self, ctx: LangParser.AssignExprContext):
-        if ctx.ID() and ctx.indexStmt():
-            raise SemanticAnalyzerException(
-                "Cannot initialize variables and index statements in one assign expression")
         if ctx.indexStmt():
             if ctx.basicTypeName():
                 raise SemanticAnalyzerException(
@@ -549,7 +543,9 @@ class LangParserListener(ParseTreeListener):
                         else self.program_compiler.create_column(elements)
                     return var
                 elif func_expr.readStrStmt():
-                    return self.program_compiler.call_function("read_string")
+                    return self.program_compiler.call_function(
+                        "read_string"
+                    )
                 elif func_expr.delFuncStmt():
                     return self.program_compiler.call_function(
                         "del", 
@@ -583,10 +579,20 @@ class LangParserListener(ParseTreeListener):
                     args = [self.findNumbExprResult(
                         ex) for ex in func_expr.custFuncCall().numbExpr()]
                     name = str(func_expr.custFuncCall().ID())
-                    return self.program_compiler.call_custom_func(name, args)
+                    return self.program_compiler.call_function(name, args)
                 elif func_expr.copyStmt():
                     copy_stmt : LangParser.CopyStmtContext = func_expr.copyStmt()
                     return self.program_compiler.call_function("copy", [self.global_vars[str(copy_stmt.ID())]])
+                elif func_expr.reshapeStmt():
+                    exit(1)
+                elif func_expr.findStmt():
+                    arg0, arg1 = tuple(
+                        map(
+                            self.findNumbExprResult,
+                            func_expr.findStmt().numbExpr()
+                        )
+                    )
+                    return self.program_compiler.call_function("find", [arg0, arg0.size, arg1])
             elif expr.indexStmt():
                 pass
         elif ctx.boolNumbSign():
@@ -604,10 +610,16 @@ class LangParserListener(ParseTreeListener):
         return self.program_compiler.call_function("length", [var])
 
     def findreshapeStmtCtxtRes(self, ctx: LangParser.ReshapeStmtContext):
-        arg1 = self.findNumbExprResult(ctx.numbExpr(0))
+        arg1: TableVariable = self.findNumbExprResult(ctx.numbExpr(0))
         arg2 = self.findNumbExprResult(ctx.numbExpr(1))
         arg3 = self.findNumbExprResult(ctx.numbExpr(2))
-        return self.program_compiler.call_reshape_func(arg1, int(arg2), int(arg3))
+        return self.program_compiler.call_function("reshape", [
+            arg1,
+            arg1.n_rows,
+            arg1.n_cols,
+            arg2,
+            arg3
+        ], result_size=(arg2, arg3))
 
     def findExprResultWithTwoOperands(self, nexprctx1: LangParser.NumbExprContext,
                                       type1: str,
